@@ -5,6 +5,5 @@ plotly
 pillow
 supabase
 tensorflow
-tensorflow-hub
 requests
 python-dotenv
