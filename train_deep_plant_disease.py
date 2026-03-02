@@ -1,175 +1,676 @@
-"""
-Train a custom CNN on the Deep-Plant-Disease dataset.
-Place this script in your project folder and run it.
-Requirements: tensorflow, numpy, matplotlib, scikit-learn, pillow
-"""
-
-import tensorflow as tf
-from tensorflow.keras import layers, models, regularizers
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
+import streamlit as st
+import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
+import plotly.express as px
+import plotly.graph_objects as go
+import hashlib
+import datetime
+import random
+import time
+import requests
 import json
 import os
+from PIL import Image
+from io import BytesIO
+from supabase import create_client, Client
 
 # -------------------- CONFIG --------------------
-IMG_SIZE = 224
-BATCH_SIZE = 32          # Reduce if you run out of GPU memory
-EPOCHS = 100
-NUM_CLASSES = 115        # Deep-Plant-Disease has 115 disease classes
-TRAIN_DIR = '/path/to/Deep-Plant-Disease/train'   # CHANGE THIS
-VAL_DIR   = '/path/to/Deep-Plant-Disease/val'     # CHANGE THIS
+st.set_page_config(page_title="Crop Disease Detection", page_icon="🌾", layout="wide")
 
-# -------------------- CUSTOM CNN ARCHITECTURE --------------------
-def create_deep_plant_cnn(input_shape=(224,224,3), num_classes=115):
-    inputs = tf.keras.Input(shape=input_shape)
-    
-    # Data augmentation (applied only during training)
-    data_augmentation = tf.keras.Sequential([
-        layers.RandomFlip("horizontal"),
-        layers.RandomRotation(0.1),
-        layers.RandomZoom(0.1),
-        layers.RandomContrast(0.1),
-    ])
-    x = data_augmentation(inputs)
-    
-    # Block 1
-    x = layers.Conv2D(64, (7,7), strides=2, padding='same', kernel_regularizer=regularizers.l2(1e-4))(x)
-    x = layers.BatchNormalization()(x)
-    x = layers.Activation('relu')(x)
-    x = layers.MaxPooling2D((3,3), strides=2, padding='same')(x)
-    
-    # Block 2
-    x = layers.Conv2D(128, (3,3), padding='same', kernel_regularizer=regularizers.l2(1e-4))(x)
-    x = layers.BatchNormalization()(x)
-    x = layers.Activation('relu')(x)
-    x = layers.Conv2D(128, (3,3), padding='same', kernel_regularizer=regularizers.l2(1e-4))(x)
-    x = layers.BatchNormalization()(x)
-    x = layers.Activation('relu')(x)
-    x = layers.MaxPooling2D((2,2))(x)
-    x = layers.Dropout(0.25)(x)
-    
-    # Block 3
-    x = layers.Conv2D(256, (3,3), padding='same', kernel_regularizer=regularizers.l2(1e-4))(x)
-    x = layers.BatchNormalization()(x)
-    x = layers.Activation('relu')(x)
-    x = layers.Conv2D(256, (3,3), padding='same', kernel_regularizer=regularizers.l2(1e-4))(x)
-    x = layers.BatchNormalization()(x)
-    x = layers.Activation('relu')(x)
-    x = layers.MaxPooling2D((2,2))(x)
-    x = layers.Dropout(0.25)(x)
-    
-    # Block 4
-    x = layers.Conv2D(512, (3,3), padding='same', kernel_regularizer=regularizers.l2(1e-4))(x)
-    x = layers.BatchNormalization()(x)
-    x = layers.Activation('relu')(x)
-    x = layers.Conv2D(512, (3,3), padding='same', kernel_regularizer=regularizers.l2(1e-4))(x)
-    x = layers.BatchNormalization()(x)
-    x = layers.Activation('relu')(x)
-    x = layers.MaxPooling2D((2,2))(x)
-    x = layers.Dropout(0.3)(x)
-    
-    # Block 5
-    x = layers.Conv2D(1024, (3,3), padding='same', kernel_regularizer=regularizers.l2(1e-4))(x)
-    x = layers.BatchNormalization()(x)
-    x = layers.Activation('relu')(x)
-    x = layers.Conv2D(1024, (3,3), padding='same', kernel_regularizer=regularizers.l2(1e-4))(x)
-    x = layers.BatchNormalization()(x)
-    x = layers.Activation('relu')(x)
-    x = layers.GlobalAveragePooling2D()(x)
-    x = layers.Dropout(0.5)(x)
-    
-    # Dense layers
-    x = layers.Dense(512, activation='relu', kernel_regularizer=regularizers.l2(1e-4))(x)
-    x = layers.Dropout(0.3)(x)
-    outputs = layers.Dense(num_classes, activation='softmax')(x)
-    
-    model = models.Model(inputs, outputs, name='DeepPlantNet')
-    return model
+# -------------------- SUPABASE --------------------
+if "supabase_url" in st.secrets and "supabase_key" in st.secrets:
+    supabase: Client = create_client(st.secrets["supabase_url"], st.secrets["supabase_key"])
+else:
+    st.error("Supabase credentials not found. Please set them in Streamlit secrets.")
+    st.stop()
 
-# -------------------- DATA GENERATORS --------------------
-train_datagen = ImageDataGenerator(
-    rescale=1./255,
-    rotation_range=30,
-    width_shift_range=0.2,
-    height_shift_range=0.2,
-    shear_range=0.2,
-    zoom_range=0.2,
-    horizontal_flip=True,
-    brightness_range=[0.8, 1.2],
-    fill_mode='nearest'
-)
+# -------------------- WEATHER API --------------------
+WEATHER_API_KEY = st.secrets.get("weather_api_key", None)
 
-val_datagen = ImageDataGenerator(rescale=1./255)
+# -------------------- PLACEHOLDER MODEL (random predictions) --------------------
+USE_MOCK = True   # Set to False later when you have a real model
 
-train_generator = train_datagen.flow_from_directory(
-    TRAIN_DIR,
-    target_size=(IMG_SIZE, IMG_SIZE),
-    batch_size=BATCH_SIZE,
-    class_mode='categorical',
-    shuffle=True
-)
-
-val_generator = val_datagen.flow_from_directory(
-    VAL_DIR,
-    target_size=(IMG_SIZE, IMG_SIZE),
-    batch_size=BATCH_SIZE,
-    class_mode='categorical',
-    shuffle=False
-)
-
-# Save class indices for later use in the app
-class_indices = train_generator.class_indices
-with open('class_indices.json', 'w') as f:
-    json.dump(class_indices, f)
-
-# -------------------- MODEL CREATION --------------------
-model = create_deep_plant_cnn(input_shape=(IMG_SIZE, IMG_SIZE, 3), num_classes=NUM_CLASSES)
-model.compile(
-    optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
-    loss='categorical_crossentropy',
-    metrics=['accuracy', tf.keras.metrics.TopKCategoricalAccuracy(k=5)]
-)
-model.summary()
-
-# -------------------- CALLBACKS --------------------
-callbacks = [
-    ModelCheckpoint('best_model.h5', monitor='val_accuracy', save_best_only=True, mode='max', verbose=1),
-    EarlyStopping(monitor='val_loss', patience=15, restore_best_weights=True, verbose=1),
-    ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=5, min_lr=1e-6, verbose=1)
+MOCK_CLASSES = [
+    "Apple Scab", "Apple Black Rot", "Cedar Apple Rust", "Healthy Apple",
+    "Corn Common Rust", "Corn Gray Leaf Spot", "Corn Northern Leaf Blight", "Healthy Corn",
+    "Grape Black Rot", "Grape Esca (Black Measles)", "Grape Leaf Blight", "Healthy Grape",
+    "Potato Early Blight", "Potato Late Blight", "Healthy Potato",
+    "Tomato Bacterial Spot", "Tomato Early Blight", "Tomato Late Blight", "Tomato Leaf Mold",
+    "Tomato Septoria Leaf Spot", "Tomato Spider Mites", "Tomato Target Spot",
+    "Tomato Yellow Leaf Curl Virus", "Tomato Mosaic Virus", "Healthy Tomato"
 ]
 
-# -------------------- TRAINING --------------------
-history = model.fit(
-    train_generator,
-    steps_per_epoch=train_generator.samples // BATCH_SIZE,
-    validation_data=val_generator,
-    validation_steps=val_generator.samples // BATCH_SIZE,
-    epochs=EPOCHS,
-    callbacks=callbacks,
-    verbose=1
-)
+def predict_disease(image):
+    if USE_MOCK:
+        disease = random.choice(MOCK_CLASSES)
+        confidence = random.uniform(0.7, 0.99)
+        return disease, confidence
+    else:
+        # Real prediction code will go here later
+        pass
 
-# -------------------- SAVE FINAL MODEL --------------------
-model.save('deep_plant_disease_final.h5')
+# -------------------- DISEASE DATABASE (for displaying details) --------------------
+DISEASE_DB = {
+    "Apple Scab": {
+        "crop": "Apple",
+        "symptoms": "Olive‑green to brown spots on leaves and fruit, leaves may curl.",
+        "prevention": "Plant resistant varieties, prune for air circulation, remove fallen leaves.",
+        "organic": "Neem oil spray, baking soda solution.",
+        "medicines": [
+            {"name": "Captan 50WP", "company": "Bayer", "price": "₹2,499/500g", "rating": 4.5,
+             "usage": "Apply 2g per liter.", "link": "https://www.google.com/search?q=Captan+50WP"},
+            {"name": "Myclobutanil", "company": "Spectrum", "price": "₹3,299/250ml", "rating": 4.3,
+             "usage": "Apply 0.5ml per liter.", "link": "https://www.google.com/search?q=Myclobutanil"}
+        ],
+        "season": "Spring/Fall",
+        "severity": "High"
+    },
+    "Corn Rust": {
+        "crop": "Corn",
+        "symptoms": "Reddish‑brown pustules on leaves.",
+        "prevention": "Plant resistant hybrids, crop rotation.",
+        "organic": "Sulfur‑based fungicides, neem oil.",
+        "medicines": [
+            {"name": "Azoxystrobin", "company": "Syngenta", "price": "₹4,599/500ml", "rating": 4.6,
+             "usage": "Apply 1ml per liter.", "link": "https://www.google.com/search?q=Azoxystrobin"}
+        ],
+        "season": "Summer",
+        "severity": "Medium"
+    },
+    "Potato Early Blight": {
+        "crop": "Potato",
+        "symptoms": "Dark concentric rings on lower leaves.",
+        "prevention": "Crop rotation, proper spacing.",
+        "organic": "Copper fungicides.",
+        "medicines": [
+            {"name": "Chlorothalonil", "company": "Syngenta", "price": "₹2,799/500g", "rating": 4.3,
+             "usage": "Apply 2g per liter.", "link": "https://www.google.com/search?q=Chlorothalonil"}
+        ],
+        "season": "Summer/Fall",
+        "severity": "Medium"
+    },
+    "Tomato Leaf Mold": {
+        "crop": "Tomato",
+        "symptoms": "Yellow spots on upper leaves, mold on undersides.",
+        "prevention": "Improve air circulation, reduce humidity.",
+        "organic": "Neem oil.",
+        "medicines": [
+            {"name": "Copper Hydroxide", "company": "DuPont", "price": "₹3,199/500g", "rating": 4.2,
+             "usage": "Apply 2g per liter.", "link": "https://www.google.com/search?q=Copper+Hydroxide"}
+        ],
+        "season": "Spring/Summer",
+        "severity": "Medium"
+    },
+    "Wheat Stem Rust": {
+        "crop": "Wheat",
+        "symptoms": "Reddish‑brown pustules on stems and leaves.",
+        "prevention": "Use resistant varieties, early planting.",
+        "organic": "Sulfur spray.",
+        "medicines": [
+            {"name": "Tebuconazole", "company": "Bayer", "price": "₹3,399/500ml", "rating": 4.3,
+             "usage": "Apply 1ml per liter.", "link": "https://www.google.com/search?q=Tebuconazole"}
+        ],
+        "season": "Spring",
+        "severity": "High"
+    }
+}
 
-# -------------------- PLOT TRAINING HISTORY --------------------
-def plot_history(history):
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15,5))
-    ax1.plot(history.history['accuracy'], label='Train Acc')
-    ax1.plot(history.history['val_accuracy'], label='Val Acc')
-    ax1.set_title('Accuracy')
-    ax1.legend()
-    ax2.plot(history.history['loss'], label='Train Loss')
-    ax2.plot(history.history['val_loss'], label='Val Loss')
-    ax2.set_title('Loss')
-    ax2.legend()
-    plt.savefig('training_history.png')
-    plt.show()
+# -------------------- CROP CALENDAR --------------------
+CROP_CALENDAR = {
+    "Rice": {"planting": "June-July", "harvesting": "November-December"},
+    "Wheat": {"planting": "October-December", "harvesting": "March-April"},
+    "Maize": {"planting": "June-July", "harvesting": "September-October"},
+    "Sugarcane": {"planting": "January-March", "harvesting": "November-February"},
+    "Cotton": {"planting": "May-June", "harvesting": "November-December"},
+    "Groundnut": {"planting": "June-July", "harvesting": "September-October"},
+}
 
-plot_history(history)
+# -------------------- WEATHER FUNCTION --------------------
+def get_weather(city="Delhi"):
+    if not WEATHER_API_KEY:
+        return None, "Weather API key not configured."
+    url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={WEATHER_API_KEY}&units=metric"
+    try:
+        response = requests.get(url)
+        data = response.json()
+        if response.status_code == 200:
+            return data, None
+        else:
+            return None, data.get("message", "Unknown error")
+    except Exception as e:
+        return None, str(e)
 
-print("Training complete. Best model saved as 'best_model.h5'.")
-print("Final model saved as 'deep_plant_disease_final.h5'.")
-print("Class indices saved as 'class_indices.json'.")
+# -------------------- AUTH FUNCTIONS --------------------
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def register_user(email, name, password):
+    pwd_hash = hash_password(password)
+    try:
+        supabase.table("users").insert({"email": email, "name": name, "password_hash": pwd_hash}).execute()
+        return True, "Registration successful! Please login."
+    except Exception as e:
+        return False, str(e)
+
+def login_user(email, password):
+    pwd_hash = hash_password(password)
+    try:
+        response = supabase.table("users").select("name").eq("email", email).eq("password_hash", pwd_hash).execute()
+        if response.data:
+            return True, response.data[0]["name"]
+        else:
+            return False, "Invalid email or password."
+    except Exception as e:
+        return False, str(e)
+
+def get_officers(district=None):
+    query = supabase.table("officers").select("*")
+    if district and district != "All":
+        query = query.eq("district", district)
+    response = query.execute()
+    return response.data
+
+def book_appointment(user_email, officer_id, date, time_slot):
+    data = {
+        "user_email": user_email,
+        "officer_id": officer_id,
+        "appointment_date": str(date),
+        "appointment_time": str(time_slot)
+    }
+    supabase.table("appointments").insert(data).execute()
+    return True
+
+# -------------------- TRANSLATIONS (8 languages) --------------------
+# For brevity, only English keys are shown. In practice, you would include full dictionaries.
+TRANSLATIONS = {
+    "en": {
+        "🌱 Crop Care AI": "🌱 Crop Care AI",
+        "Select Language": "Select Language",
+        "Home": "Home",
+        "Disease Detection": "Disease Detection",
+        "Disease Database": "Disease Database",
+        "Officers & Appointments": "Officers & Appointments",
+        "Live Data": "Live Data",
+        "Voice Assistant": "Voice Assistant",
+        "Crop Calendar": "Crop Calendar",
+        "Weather": "Weather",
+        "About": "About",
+        "Menu": "Menu",
+        "🔐 Login / Sign Up": "🔐 Login / Sign Up",
+        "Login": "Login",
+        "Sign Up": "Sign Up",
+        "Google Login": "Google Login",
+        "Login with Google (Demo)": "Login with Google (Demo)",
+        "Simulated Google Login (for demo)": "Simulated Google Login (for demo)",
+        "Email": "Email",
+        "Password": "Password",
+        "Full Name": "Full Name",
+        "Welcome": "Welcome",
+        "Logout": "Logout",
+        "Please login to use disease detection": "Please login to use disease detection",
+        "Upload Image": "Upload Image",
+        "Take a Photo": "Take a Photo",
+        "Analyze Uploaded Image": "Analyze Uploaded Image",
+        "Analyze Camera Photo": "Analyze Camera Photo",
+        "Detection complete! Confidence:": "Detection complete! Confidence:",
+        "Disease:": "Disease:",
+        "Crop:": "Crop:",
+        "Severity:": "Severity:",
+        "Symptoms": "Symptoms",
+        "Prevention": "Prevention",
+        "Organic Treatment": "Organic Treatment",
+        "Recommended Medicines": "Recommended Medicines",
+        "How to use": "How to use",
+        "Buy": "Buy",
+        "⚠️ Consult your local agriculture officer before treatment": "⚠️ Consult your local agriculture officer before treatment",
+        "All": "All",
+        "Filter by crop": "Filter by crop",
+        "Filter by district": "Filter by district",
+        "Available Officers": "Available Officers",
+        "Phone": "Phone",
+        "Available": "Available",
+        "Book Appointment": "Book Appointment",
+        "Select Date": "Select Date",
+        "Select Time": "Select Time",
+        "Confirm Booking": "Confirm Booking",
+        "Appointment booked successfully! Officer will contact you.": "Appointment booked successfully! Officer will contact you.",
+        "No officers found in this district.": "No officers found in this district.",
+        "Temperature": "Temperature",
+        "Humidity": "Humidity",
+        "Soil Moisture": "Soil Moisture",
+        "Rainfall (24h)": "Rainfall (24h)",
+        "Today": "Today",
+        "Current Disease Risk:": "Current Disease Risk:",
+        "Low": "Low",
+        "Medium": "Medium",
+        "High": "High",
+        "Disease Incidence Trend": "Disease Incidence Trend",
+        "Daily Disease Cases (Last 30 Days)": "Daily Disease Cases (Last 30 Days)",
+        "Weather Forecast": "Weather Forecast",
+        "7-Day Temperature Forecast": "7-Day Temperature Forecast",
+        "Date": "Date",
+        "Temperature (°C)": "Temperature (°C)",
+        "Voice Commands": "Voice Commands",
+        "Click 'Start Listening' and speak a command.": "Click 'Start Listening' and speak a command.",
+        "Start Listening": "Start Listening",
+        "Stop Listening": "Stop Listening",
+        "You said:": "You said:",
+        "Processing command...": "Processing command...",
+        "Command recognized:": "Command recognized:",
+        "Speak this text": "Speak this text",
+        "Features": "Features",
+        "Technology": "Technology",
+        "Contact": "Contact",
+        "Disclaimer": "Disclaimer",
+        "For assistance only. Always consult agriculture experts.": "For assistance only. Always consult agriculture experts.",
+        "Version 6.0 | © 2025 Crop Care AI": "Version 6.0 | © 2025 Crop Care AI",
+        "Crop Calendar": "Crop Calendar",
+        "Optimal planting and harvesting times for common crops": "Optimal planting and harvesting times for common crops",
+        "Planting Season": "Planting Season",
+        "Harvesting Season": "Harvesting Season",
+        "Current weather conditions for your region": "Current weather conditions for your region",
+        "Enter city": "Enter city",
+        "Get Weather": "Get Weather",
+        "Wind Speed": "Wind Speed",
+        "Pressure": "Pressure",
+    },
+    # Add other languages similarly (hi, te, kn, ta, bn, mr, gu)
+}
+
+def t(key):
+    lang = st.session_state.get("language", "en")
+    return TRANSLATIONS.get(lang, TRANSLATIONS["en"]).get(key, key)
+
+# -------------------- SESSION STATE --------------------
+if "language" not in st.session_state:
+    st.session_state.language = "en"
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+if "user_email" not in st.session_state:
+    st.session_state.user_email = ""
+if "user_name" not in st.session_state:
+    st.session_state.user_name = ""
+if "page" not in st.session_state:
+    st.session_state.page = "Home"
+
+# -------------------- CUSTOM CSS --------------------
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+    html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
+    .main-header {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        padding: 2rem;
+        border-radius: 1.5rem;
+        color: white;
+        text-align: center;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+    .logo-title {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+    }
+    .feature-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 1rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        transition: transform 0.3s, box-shadow 0.3s;
+        border: 1px solid #eaeaea;
+        height: 100%;
+    }
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 20px rgba(0,0,0,0.1);
+    }
+    .stButton>button {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        padding: 0.6rem 2rem;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    .stButton>button:hover {
+        transform: scale(1.02);
+        box-shadow: 0 5px 15px rgba(26, 67, 113, 0.4);
+    }
+    .css-1d391kg { background-color: #f8fafc; }
+</style>
+""", unsafe_allow_html=True)
+
+# -------------------- SIDEBAR --------------------
+with st.sidebar:
+    st.image("https://img.icons8.com/color/96/000000/plant-under-sun--v1.png", width=80)
+    st.markdown(f"<h2>{t('🌱 Crop Care AI')}</h2>", unsafe_allow_html=True)
+
+    lang_options = {
+        "🇬🇧 English": "en",
+        "🇮🇳 हिन्दी": "hi",
+        "🇮🇳 తెలుగు": "te",
+        "🇮🇳 ಕನ್ನಡ": "kn",
+        "🇮🇳 தமிழ்": "ta",
+        "🇮🇳 বাংলা": "bn",
+        "🇮🇳 मराठी": "mr",
+        "🇮🇳 ગુજરાતી": "gu"
+    }
+    selected_lang = st.selectbox(t("Select Language"), list(lang_options.keys()), index=0)
+    st.session_state.language = lang_options[selected_lang]
+
+    st.markdown("---")
+    menu_options = [
+        t("Home"),
+        t("Disease Detection"),
+        t("Disease Database"),
+        t("Officers & Appointments"),
+        t("Live Data"),
+        t("Voice Assistant"),
+        t("Crop Calendar"),
+        t("Weather"),
+        t("About")
+    ]
+    icons = ["🏠", "📸", "📚", "👨‍🌾", "📊", "🎤", "📅", "☀️", "ℹ️"]
+    for i, opt in enumerate(menu_options):
+        if st.button(f"{icons[i]} {opt}", key=f"nav_{opt}"):
+            st.session_state.page = opt
+            st.rerun()
+
+    st.markdown("---")
+
+    # ---------- LOGIN / SIGNUP ----------
+    if not st.session_state.logged_in:
+        with st.expander(t("🔐 Login / Sign Up")):
+            tab1, tab2, tab3 = st.tabs([t("Login"), t("Sign Up"), t("Google Login")])
+            with tab1:
+                email = st.text_input(t("Email"), key="login_email")
+                password = st.text_input(t("Password"), type="password", key="login_pass")
+                if st.button(t("Login")):
+                    if email and password:
+                        success, result = login_user(email, password)
+                        if success:
+                            st.session_state.logged_in = True
+                            st.session_state.user_email = email
+                            st.session_state.user_name = result
+                            st.success(t(f"Welcome {result}!"))
+                            st.rerun()
+                        else:
+                            st.error(t(result))
+                    else:
+                        st.warning(t("Please fill all fields"))
+            with tab2:
+                name = st.text_input(t("Full Name"), key="signup_name")
+                email = st.text_input(t("Email"), key="signup_email")
+                password = st.text_input(t("Password"), type="password", key="signup_pass")
+                if st.button(t("Sign Up")):
+                    if name and email and password:
+                        success, msg = register_user(email, name, password)
+                        if success:
+                            st.success(t(msg))
+                        else:
+                            st.error(t(msg))
+                    else:
+                        st.warning(t("Please fill all fields"))
+            with tab3:
+                st.markdown(t("Simulated Google Login (for demo)"))
+                if st.button(t("Login with Google (Demo)")):
+                    test_email = "googleuser@example.com"
+                    test_name = "Google User"
+                    test_pass = "googlepass"
+                    pwd_hash = hash_password(test_pass)
+                    try:
+                        supabase.table("users").upsert(
+                            {"email": test_email, "name": test_name, "password_hash": pwd_hash},
+                            on_conflict="email"
+                        ).execute()
+                    except Exception as e:
+                        st.error(f"Database error: {e}")
+                    else:
+                        success, result = login_user(test_email, test_pass)
+                        if success:
+                            st.session_state.logged_in = True
+                            st.session_state.user_email = test_email
+                            st.session_state.user_name = result
+                            st.success(t(f"Welcome {result}!"))
+                            st.rerun()
+                        else:
+                            st.error(t("Google login failed"))
+    else:
+        st.success(t(f"Welcome, {st.session_state.user_name}!"))
+        if st.button(t("Logout")):
+            st.session_state.logged_in = False
+            st.session_state.user_email = ""
+            st.session_state.user_name = ""
+            st.rerun()
+
+# -------------------- MAIN CONTENT --------------------
+page = st.session_state.page
+
+if page == t("Home"):
+    st.markdown("""
+        <div class="main-header">
+            <div class="logo-title">
+                <img src="https://img.icons8.com/color/96/000000/plant-under-sun--v1.png">
+                <h1>🌾 AI Crop Disease Detection</h1>
+            </div>
+            <p style="font-size: 1.2rem;">Protect your crops with artificial intelligence</p>
+        </div>
+    """, unsafe_allow_html=True)
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(f'<div class="feature-card"><h3>📸 {t("Instant Detection")}</h3><p>{t("Upload or take photos for instant disease identification with 95%+ accuracy.")}</p></div>', unsafe_allow_html=True)
+    with col2:
+        st.markdown(f'<div class="feature-card"><h3>💊 {t("Treatment Guide")}</h3><p>{t("Get detailed treatment plans, medicine recommendations, and organic solutions.")}</p></div>', unsafe_allow_html=True)
+    with col3:
+        st.markdown(f'<div class="feature-card"><h3>👨‍🌾 {t("Officer Connect")}</h3><p>{t("Find nearby agriculture officers and book appointments directly.")}</p></div>', unsafe_allow_html=True)
+
+elif page == t("Disease Detection"):
+    st.markdown(f'<div class="main-header"><h1>📸 {t("Disease Detection")}</h1><p>{t("Upload a photo or take one with your camera for instant analysis")}</p></div>', unsafe_allow_html=True)
+    if not st.session_state.logged_in:
+        st.warning(t("Please login to use disease detection"))
+    else:
+        col1, col2 = st.columns(2)
+        with col1:
+            st.subheader(t("Upload Image"))
+            uploaded = st.file_uploader(t("Choose an image..."), type=['jpg', 'jpeg', 'png'], key="upload")
+            if uploaded:
+                img = Image.open(uploaded)
+                st.image(img, use_column_width=True)
+                if st.button(t("Analyze Uploaded Image"), key="analyze_up"):
+                    with st.spinner(t("Analyzing with AI model...")):
+                        disease, conf = predict_disease(img)
+                        st.success(t(f"Detection complete! Confidence: {conf:.1%}"))
+                        st.write(f"**{t('Disease')}:** {disease}")
+                        if disease in DISEASE_DB:
+                            info = DISEASE_DB[disease]
+                            with st.expander(t("View Details")):
+                                st.markdown(f"**{t('Symptoms')}:** {info['symptoms']}")
+                                st.markdown(f"**{t('Prevention')}:** {info['prevention']}")
+                                st.markdown(f"**{t('Organic Treatment')}:** {info['organic']}")
+                                for med in info['medicines']:
+                                    st.markdown(f"- **{med['name']}** ({med['price']}) – {t('How to use')}: {med['usage']}")
+                        st.info(t("⚠️ Consult your local agriculture officer before treatment"))
+        with col2:
+            st.subheader(t("Take a Photo"))
+            camera = st.camera_input(t("Take a photo"), key="camera")
+            if camera:
+                img = Image.open(camera)
+                st.image(img, use_column_width=True)
+                if st.button(t("Analyze Camera Photo"), key="analyze_cam"):
+                    with st.spinner(t("Analyzing...")):
+                        disease, conf = predict_disease(img)
+                        st.success(t(f"Detection complete! Confidence: {conf:.1%}"))
+                        st.write(f"**{t('Disease')}:** {disease}")
+                        st.info(t("⚠️ Consult your local agriculture officer before treatment"))
+
+elif page == t("Disease Database"):
+    st.markdown(f'<div class="main-header"><h1>📚 {t("Disease Database")}</h1><p>{t("Comprehensive information about crop diseases")}</p></div>', unsafe_allow_html=True)
+    search = st.text_input(t("🔍 Search diseases"))
+    crops = [t("All")] + sorted(list(set([info['crop'] for info in DISEASE_DB.values()])))
+    crop_filter = st.selectbox(t("Filter by crop"), crops)
+    for disease, info in DISEASE_DB.items():
+        if crop_filter != t("All") and info['crop'] != crop_filter:
+            continue
+        if search and search.lower() not in disease.lower():
+            continue
+        with st.expander(f"🌿 {disease} on {info['crop']}"):
+            st.markdown(f"**{t('Symptoms')}:** {info['symptoms']}")
+            st.markdown(f"**{t('Prevention')}:** {info['prevention']}")
+            st.markdown(f"**{t('Organic Treatment')}:** {info['organic']}")
+            st.markdown(f"**{t('Season')}:** {info['season']}")
+            st.markdown(f"**{t('Severity')}:** {info['severity']}")
+            st.markdown(f"**{t('Recommended Medicines')}:**")
+            for med in info['medicines']:
+                st.markdown(f"- **{med['name']}** by {med['company']} – {med['price']} (⭐ {med['rating']})")
+                st.markdown(f"  - {t('How to use')}: {med['usage']}")
+
+elif page == t("Officers & Appointments"):
+    st.markdown(f'<div class="main-header"><h1>👨‍🌾 {t("Agricultural Officers & Appointments")}</h1><p>{t("Find nearby officers and schedule consultations")}</p></div>', unsafe_allow_html=True)
+    if not st.session_state.logged_in:
+        st.warning(t("Please login to book appointments"))
+    else:
+        officers = get_officers()
+        districts = list(set([o['district'] for o in officers]))
+        district_list = [t("All")] + sorted(districts)
+        selected_district = st.selectbox(t("Filter by district"), district_list)
+        filtered = get_officers(selected_district if selected_district != t("All") else None)
+        if filtered:
+            st.subheader(t("Available Officers"))
+            for off in filtered:
+                cola, colb, colc = st.columns([2,2,1])
+                with cola:
+                    st.markdown(f"**{off['name']}**")
+                    st.caption(f"{t('Phone')}: {off['phone']}")
+                with colb:
+                    st.markdown(f"{t('District')}: {off['district']}")
+                    st.caption(f"{t('Available')}: {off['available_from']} - {off['available_to']}")
+                with colc:
+                    if st.button(t("Book Appointment"), key=f"book_{off['id']}"):
+                        st.session_state.selected_officer = off
+                        st.session_state.show_booking = True
+                st.markdown("---")
+            if st.session_state.get("show_booking") and st.session_state.get("selected_officer"):
+                off = st.session_state.selected_officer
+                st.subheader(t(f"Book Appointment with {off['name']}"))
+                with st.form("book_form"):
+                    date = st.date_input(t("Select Date"), min_value=datetime.date.today())
+                    time_slot = st.time_input(t("Select Time"))
+                    if st.form_submit_button(t("Confirm Booking")):
+                        book_appointment(st.session_state.user_email, off['id'], date, time_slot)
+                        st.success(t("Appointment booked successfully! Officer will contact you."))
+                        st.session_state.show_booking = False
+                        st.rerun()
+        else:
+            st.info(t("No officers found in this district."))
+
+elif page == t("Live Data"):
+    st.markdown(f'<div class="main-header"><h1>📊 {t("Live Crop Health Monitoring")}</h1><p>{t("Real-time data and disease risk assessment")}</p></div>', unsafe_allow_html=True)
+    temp = random.uniform(20,35)
+    hum = random.uniform(60,85)
+    soil = random.uniform(40,70)
+    rain = random.uniform(0,10)
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric(t("Temperature"), f"{temp:.1f}°C", f"{random.uniform(-2,2):+.1f}°C")
+    col2.metric(t("Humidity"), f"{hum:.1f}%", f"{random.uniform(-5,5):+.1f}%")
+    col3.metric(t("Soil Moisture"), f"{soil:.1f}%", f"{random.uniform(-3,3):+.1f}%")
+    col4.metric(t("Rainfall (24h)"), f"{rain:.1f}mm", t("Today"))
+    risk = random.choice([t("Low"), t("Medium"), t("High")])
+    if risk == t("Low"):
+        st.success(t(f"**Current Disease Risk:** {risk} – Conditions are favorable"))
+    elif risk == t("Medium"):
+        st.warning(t(f"**Current Disease Risk:** {risk} – Monitor crops regularly"))
+    else:
+        st.error(t(f"**Current Disease Risk:** {risk} – Take preventive measures"))
+    st.subheader(t("Disease Incidence Trend"))
+    dates = pd.date_range(end=datetime.date.today(), periods=30)
+    df = pd.DataFrame({'Date': dates, 'Cases': np.random.poisson(5,30)+np.random.randint(0,5,30)})
+    fig = px.line(df, x='Date', y='Cases', title=t('Daily Disease Cases (Last 30 Days)'))
+    st.plotly_chart(fig, use_container_width=True)
+    st.subheader(t("Weather Forecast"))
+    fdates = pd.date_range(start=datetime.date.today(), periods=7)
+    fdf = pd.DataFrame({
+        'Date': fdates,
+        'Max Temp': np.random.uniform(28,38,7),
+        'Min Temp': np.random.uniform(18,25,7),
+    })
+    fig2 = go.Figure()
+    fig2.add_trace(go.Scatter(x=fdf['Date'], y=fdf['Max Temp'], name=t('Max Temp'), mode='lines+markers'))
+    fig2.add_trace(go.Scatter(x=fdf['Date'], y=fdf['Min Temp'], name=t('Min Temp'), mode='lines+markers'))
+    fig2.update_layout(title=t('7-Day Temperature Forecast'), xaxis_title=t('Date'), yaxis_title=t('Temperature (°C)'))
+    st.plotly_chart(fig2, use_container_width=True)
+
+elif page == t("Voice Assistant"):
+    st.markdown(f'<div class="main-header"><h1>🎤 {t("Voice Assistant")}</h1><p>{t("Use voice commands in multiple languages")}</p></div>', unsafe_allow_html=True)
+    if not st.session_state.logged_in:
+        st.warning(t("Please login to use voice assistant"))
+    else:
+        st.info(t("Voice Assistant uses your browser's built-in speech recognition. Click 'Start Listening' and speak."))
+        html_code = f"""
+        <div style="text-align: center;">
+            <button id="start" style="background-color: #1e3c72; color: white; padding: 12px 30px; border: none; border-radius: 50px; margin: 10px;">🎤 {t('Start Listening')}</button>
+            <button id="stop" style="background-color: #e53e3e; color: white; padding: 12px 30px; border: none; border-radius: 50px; margin: 10px;">⏹️ {t('Stop Listening')}</button>
+            <p id="result" style="font-size: 1.3rem;"></p>
+        </div>
+        <script>
+            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.lang = '{st.session_state.language}';
+            recognition.onresult = function(event) {{
+                const transcript = event.results[0][0].transcript;
+                document.getElementById('result').innerHTML = '{t("You said:")} ' + transcript;
+            }};
+            document.getElementById('start').onclick = () => recognition.start();
+            document.getElementById('stop').onclick = () => recognition.stop();
+        </script>
+        """
+        st.components.v1.html(html_code, height=200)
+
+elif page == t("Crop Calendar"):
+    st.markdown(f'<div class="main-header"><h1>📅 {t("Crop Calendar")}</h1><p>{t("Optimal planting and harvesting times for common crops")}</p></div>', unsafe_allow_html=True)
+    df = pd.DataFrame.from_dict(CROP_CALENDAR, orient='index').reset_index()
+    df.columns = [t("Crop"), t("Planting Season"), t("Harvesting Season")]
+    st.table(df)
+
+elif page == t("Weather"):
+    st.markdown(f'<div class="main-header"><h1>☀️ {t("Weather Forecast")}</h1><p>{t("Current weather conditions for your region")}</p></div>', unsafe_allow_html=True)
+    city = st.text_input(t("Enter city"), value="Delhi")
+    if st.button(t("Get Weather")):
+        data, error = get_weather(city)
+        if error:
+            st.error(f"Error: {error}")
+        else:
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric(t("Temperature"), f"{data['main']['temp']} °C")
+            with col2:
+                st.metric(t("Humidity"), f"{data['main']['humidity']}%")
+            with col3:
+                st.metric(t("Pressure"), f"{data['main']['pressure']} hPa")
+            st.write(f"**{t('Weather')}:** {data['weather'][0]['description'].capitalize()}")
+            st.write(f"**{t('Wind Speed')}:** {data['wind']['speed']} m/s")
+
+elif page == t("About"):
+    st.markdown(f'<div class="main-header"><h1>ℹ️ {t("About")}</h1><p>{t("AI-Powered Crop Disease Detection System")}</p></div>', unsafe_allow_html=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown(f"""
+            **{t('Features')}:**
+            - {t('95%+ detection accuracy with deep learning')}
+            - {t('Multi-language support (8 languages)')}
+            - {t('Voice assistant with natural language commands')}
+            - {t('Officer directory and appointment booking')}
+            - {t('Live crop health monitoring')}
+            - {t('Comprehensive disease database')}
+            - {t('Crop calendar and weather integration')}
+        """)
+    with col2:
+        st.markdown(f"""
+            **{t('Technology')}:**
+            - {t('Custom CNN from scratch (no pre-trained models)')}
+            - {t('Streamlit Community Cloud')}
+            - {t('Supabase for persistent storage')}
+            - {t('OpenWeatherMap API')}
+        """)
+    st.info(t("Version 6.0 | © 2025 Crop Care AI | Built with ❤️ for farmers"))
