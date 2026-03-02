@@ -49,66 +49,119 @@ def predict_disease(image):
         # Real prediction code will go here later
         pass
 
-# -------------------- DISEASE DATABASE --------------------
+# -------------------- DISEASE DATABASE (detailed) --------------------
 DISEASE_DB = {
     "Apple Scab": {
         "crop": "Apple",
-        "symptoms": "Olive‑green to brown spots on leaves and fruit, leaves may curl.",
-        "prevention": "Plant resistant varieties, prune for air circulation, remove fallen leaves.",
-        "organic": "Neem oil spray, baking soda solution.",
+        "symptoms": "Olive‑green to brown spots on leaves and fruit, leaves may curl and fall prematurely. Fruit may become deformed and cracked.",
+        "prevention": "Plant resistant varieties. Prune trees to improve air circulation. Remove and destroy fallen leaves. Avoid overhead irrigation.",
+        "organic": "Neem oil spray (2‑3 ml per liter) every 7‑10 days. Baking soda solution (1 tsp per liter water) with a few drops of vegetable oil.",
         "medicines": [
             {"name": "Captan 50WP", "company": "Bayer", "price": "₹2,499/500g", "rating": 4.5,
-             "usage": "Apply 2g per liter.", "link": "https://www.google.com/search?q=Captan+50WP"},
+             "usage": "Apply 2g per liter of water. Repeat every 7‑10 days. Use 200‑300 liters per acre.",
+             "link": "https://www.google.com/search?q=Captan+50WP"},
             {"name": "Myclobutanil", "company": "Spectrum", "price": "₹3,299/250ml", "rating": 4.3,
-             "usage": "Apply 0.5ml per liter.", "link": "https://www.google.com/search?q=Myclobutanil"}
+             "usage": "Apply 0.5ml per liter of water. Do not apply more than 3 times per season.",
+             "link": "https://www.google.com/search?q=Myclobutanil"},
+            {"name": "Sulfur Spray", "company": "Bonide", "price": "₹1,899/500ml", "rating": 4.2,
+             "usage": "Apply 5ml per liter. Use when temperature is below 30°C.",
+             "link": "https://www.google.com/search?q=Sulfur+Spray"}
         ],
         "season": "Spring/Fall",
         "severity": "High"
     },
     "Corn Rust": {
         "crop": "Corn",
-        "symptoms": "Reddish‑brown pustules on leaves.",
-        "prevention": "Plant resistant hybrids, crop rotation.",
-        "organic": "Sulfur‑based fungicides, neem oil.",
+        "symptoms": "Reddish‑brown pustules on both leaf surfaces, primarily on leaves. Pustules may turn black as they age.",
+        "prevention": "Plant resistant hybrids. Practice crop rotation. Avoid overhead irrigation. Remove crop debris after harvest.",
+        "organic": "Sulfur‑based fungicides. Compost tea spray. Neem oil (2ml per liter) weekly.",
         "medicines": [
             {"name": "Azoxystrobin", "company": "Syngenta", "price": "₹4,599/500ml", "rating": 4.6,
-             "usage": "Apply 1ml per liter.", "link": "https://www.google.com/search?q=Azoxystrobin"}
+             "usage": "Apply 1ml per liter. Use 200‑300 liters per acre. Maximum 2 applications per season.",
+             "link": "https://www.google.com/search?q=Azoxystrobin"},
+            {"name": "Pyraclostrobin", "company": "BASF", "price": "₹5,299/500ml", "rating": 4.4,
+             "usage": "Apply 0.8ml per liter. Do not apply within 30 days of harvest.",
+             "link": "https://www.google.com/search?q=Pyraclostrobin"}
         ],
         "season": "Summer",
         "severity": "Medium"
     },
     "Potato Early Blight": {
         "crop": "Potato",
-        "symptoms": "Dark concentric rings on lower leaves.",
-        "prevention": "Crop rotation, proper spacing.",
-        "organic": "Copper fungicides.",
+        "symptoms": "Dark brown to black lesions with concentric rings, usually on lower leaves. Lesions may enlarge and cause leaf drop.",
+        "prevention": "Crop rotation (avoid planting potatoes in same field for 3 years). Proper spacing. Avoid overhead irrigation. Use disease‑free seed.",
+        "organic": "Copper fungicides (3g per liter). Bacillus subtilis spray. Compost tea.",
         "medicines": [
             {"name": "Chlorothalonil", "company": "Syngenta", "price": "₹2,799/500g", "rating": 4.3,
-             "usage": "Apply 2g per liter.", "link": "https://www.google.com/search?q=Chlorothalonil"}
+             "usage": "Apply 2g per liter. Use 300‑400 liters per acre. Repeat every 7‑10 days.",
+             "link": "https://www.google.com/search?q=Chlorothalonil"},
+            {"name": "Azoxystrobin", "company": "Bayer", "price": "₹4,899/500ml", "rating": 4.5,
+             "usage": "Apply 1ml per liter. Use 200 liters per acre. Maximum 2 applications.",
+             "link": "https://www.google.com/search?q=Azoxystrobin"}
         ],
         "season": "Summer/Fall",
         "severity": "Medium"
     },
     "Tomato Leaf Mold": {
         "crop": "Tomato",
-        "symptoms": "Yellow spots on upper leaves, mold on undersides.",
-        "prevention": "Improve air circulation, reduce humidity.",
-        "organic": "Neem oil.",
+        "symptoms": "Pale green or yellowish spots on upper leaf surfaces, olive‑green to grayish mold on undersides. Leaves may wither and die.",
+        "prevention": "Improve air circulation. Reduce humidity. Water at base of plants. Remove lower leaves. Use resistant varieties.",
+        "organic": "Neem oil (2ml per liter). Potassium bicarbonate (1 tsp per liter). Compost tea.",
         "medicines": [
             {"name": "Copper Hydroxide", "company": "DuPont", "price": "₹3,199/500g", "rating": 4.2,
-             "usage": "Apply 2g per liter.", "link": "https://www.google.com/search?q=Copper+Hydroxide"}
+             "usage": "Apply 2g per liter. Use 300 liters per acre. Repeat every 7 days.",
+             "link": "https://www.google.com/search?q=Copper+Hydroxide"},
+            {"name": "Chlorothalonil", "company": "Syngenta", "price": "₹2,899/500g", "rating": 4.1,
+             "usage": "Apply 2g per liter. Use 300‑400 liters per acre. Do not use within 7 days of harvest.",
+             "link": "https://www.google.com/search?q=Chlorothalonil"}
         ],
         "season": "Spring/Summer",
         "severity": "Medium"
     },
     "Wheat Stem Rust": {
         "crop": "Wheat",
-        "symptoms": "Reddish‑brown pustules on stems and leaves.",
-        "prevention": "Use resistant varieties, early planting.",
-        "organic": "Sulfur spray.",
+        "symptoms": "Reddish‑brown pustules on stems and leaves, can cause stem breakage and grain shriveling. Pustules are elongated.",
+        "prevention": "Use resistant varieties. Early planting. Destroy volunteer wheat. Avoid excessive nitrogen.",
+        "organic": "Sulfur spray (5g per liter). Neem oil. Bacillus subtilis.",
         "medicines": [
             {"name": "Tebuconazole", "company": "Bayer", "price": "₹3,399/500ml", "rating": 4.3,
-             "usage": "Apply 1ml per liter.", "link": "https://www.google.com/search?q=Tebuconazole"}
+             "usage": "Apply 1ml per liter. Use 200 liters per acre. Apply at first sign of disease.",
+             "link": "https://www.google.com/search?q=Tebuconazole"},
+            {"name": "Propiconazole", "company": "Syngenta", "price": "₹4,199/500ml", "rating": 4.4,
+             "usage": "Apply 0.5ml per liter. Use 200 liters per acre. Maximum 2 applications.",
+             "link": "https://www.google.com/search?q=Propiconazole"}
+        ],
+        "season": "Spring",
+        "severity": "High"
+    },
+    "Rice Blast": {
+        "crop": "Rice",
+        "symptoms": "Diamond‑shaped lesions with gray centers and brown margins on leaves.",
+        "prevention": "Use resistant varieties. Avoid excessive nitrogen. Maintain proper water management.",
+        "organic": "Neem cake, Trichoderma, silica application.",
+        "medicines": [
+            {"name": "Tricyclazole", "company": "Bayer", "price": "₹3,899/500ml", "rating": 4.5,
+             "usage": "Apply 1ml per liter. Use 200 liters per acre.",
+             "link": "https://www.google.com/search?q=Tricyclazole"},
+            {"name": "Isoprothiolane", "company": "Syngenta", "price": "₹4,299/500ml", "rating": 4.3,
+             "usage": "Apply 0.8ml per liter.",
+             "link": "https://www.google.com/search?q=Isoprothiolane"}
+        ],
+        "season": "Kharif",
+        "severity": "High"
+    },
+    "Grape Black Rot": {
+        "crop": "Grape",
+        "symptoms": "Circular lesions on leaves with black margins, shriveled and blackened fruit.",
+        "prevention": "Prune to improve air circulation. Remove mummified fruit. Maintain proper spacing.",
+        "organic": "Copper fungicides, Bacillus subtilis, garlic spray.",
+        "medicines": [
+            {"name": "Mancozeb", "company": "Dow", "price": "₹2,999/500g", "rating": 4.3,
+             "usage": "Apply 2g per liter. Repeat every 7‑10 days.",
+             "link": "https://www.google.com/search?q=Mancozeb"},
+            {"name": "Copper Oxychloride", "company": "Nufarm", "price": "₹3,499/500g", "rating": 4.2,
+             "usage": "Apply 3g per liter.",
+             "link": "https://www.google.com/search?q=Copper+Oxychloride"}
         ],
         "season": "Spring",
         "severity": "High"
@@ -183,26 +236,29 @@ def book_appointment(user_email, officer_id, date, time_slot):
 # -------------------- CHATBOT ENGINE --------------------
 def chatbot_response(query):
     query = query.lower()
-    if any(word in query for word in ["hello", "hi", "hey"]):
+    # Greetings
+    if any(word in query for word in ["hello", "hi", "hey", "namaste"]):
         return "Hello! How can I help you with your crops today?"
-    elif any(word in query for word in ["disease", "symptom"]):
-        # Look for crop names in query
-        for disease in DISEASE_DB:
-            if disease.lower() in query:
-                info = DISEASE_DB[disease]
-                return f"{disease}: {info['symptoms']}"
-        return "Please tell me the name of the disease you're asking about."
-    elif any(word in query for word in ["officer", "appointment"]):
+    # Disease inquiries
+    for disease in DISEASE_DB:
+        if disease.lower() in query:
+            info = DISEASE_DB[disease]
+            return (f"{disease}: {info['symptoms']}\n\n"
+                    f"Prevention: {info['prevention']}\n\n"
+                    f"Organic treatment: {info['organic']}")
+    # Officers
+    if any(word in query for word in ["officer", "appointment", "contact"]):
         return "You can find and book officers under the 'Officers & Appointments' page."
-    elif any(word in query for word in ["weather", "temperature"]):
+    # Weather
+    if any(word in query for word in ["weather", "temperature", "rain"]):
         return "Go to the Weather page to get current conditions for your city."
-    elif any(word in query for word in ["thank", "thanks"]):
+    # Thanks
+    if any(word in query for word in ["thank", "thanks", "dhanyavaad"]):
         return "You're welcome!"
-    else:
-        return "I'm sorry, I didn't understand that. Try asking about diseases, officers, or weather."
+    # Default
+    return "I'm sorry, I didn't understand that. Try asking about a specific disease, officers, or weather."
 
 # -------------------- TRANSLATIONS (8 languages) --------------------
-# For brevity, only English keys are shown. In practice, include full dictionaries.
 TRANSLATIONS = {
     "en": {
         "🌱 Crop Care AI": "🌱 Crop Care AI",
@@ -286,7 +342,7 @@ TRANSLATIONS = {
         "Contact": "Contact",
         "Disclaimer": "Disclaimer",
         "For assistance only. Always consult agriculture experts.": "For assistance only. Always consult agriculture experts.",
-        "Version 6.1 | © 2025 Crop Care AI": "Version 6.1 | © 2025 Crop Care AI",
+        "Version 7.0 | © 2025 Crop Care AI": "Version 7.0 | © 2025 Crop Care AI",
         "Crop Calendar": "Crop Calendar",
         "Optimal planting and harvesting times for common crops": "Optimal planting and harvesting times for common crops",
         "Planting Season": "Planting Season",
@@ -296,8 +352,12 @@ TRANSLATIONS = {
         "Get Weather": "Get Weather",
         "Wind Speed": "Wind Speed",
         "Pressure": "Pressure",
+        "You": "You",
+        "Command": "Command",
+        "Send Command": "Send Command",
     },
-    # Add other languages similarly
+    # For brevity, other languages are omitted. You can add them following the same pattern.
+    # They should contain all keys above.
 }
 
 def t(key):
@@ -400,7 +460,7 @@ with st.sidebar:
         t("Disease Database"),
         t("Officers & Appointments"),
         t("Live Data"),
-        t("Assistant"),          # Combined page
+        t("Assistant"),
         t("Crop Calendar"),
         t("Weather"),
         t("About")
@@ -413,7 +473,7 @@ with st.sidebar:
 
     st.markdown("---")
 
-    # ---------- LOGIN / SIGNUP (same as before) ----------
+    # ---------- LOGIN / SIGNUP ----------
     if not st.session_state.logged_in:
         with st.expander(t("🔐 Login / Sign Up")):
             tab1, tab2, tab3 = st.tabs([t("Login"), t("Sign Up"), t("Google Login")])
@@ -481,7 +541,6 @@ with st.sidebar:
 # -------------------- MAIN CONTENT --------------------
 page = st.session_state.page
 
-# ---- Home (unchanged) ----
 if page == t("Home"):
     st.markdown("""
         <div class="main-header">
@@ -498,7 +557,6 @@ if page == t("Home"):
     with col3:
         st.markdown(f'<div class="feature-card"><h3>👨‍🌾 {t("Officer Connect")}</h3><p>{t("Find nearby agriculture officers and book appointments directly.")}</p></div>', unsafe_allow_html=True)
 
-# ---- Disease Detection (unchanged) ----
 elif page == t("Disease Detection"):
     st.markdown(f'<div class="main-header"><h1>📸 {t("Disease Detection")}</h1><p>{t("Upload a photo or take one with your camera for instant analysis")}</p></div>', unsafe_allow_html=True)
     if not st.session_state.logged_in:
@@ -522,8 +580,10 @@ elif page == t("Disease Detection"):
                                 st.markdown(f"**{t('Symptoms')}:** {info['symptoms']}")
                                 st.markdown(f"**{t('Prevention')}:** {info['prevention']}")
                                 st.markdown(f"**{t('Organic Treatment')}:** {info['organic']}")
+                                st.markdown(f"**{t('Recommended Medicines')}:**")
                                 for med in info['medicines']:
-                                    st.markdown(f"- **{med['name']}** ({med['price']}) – {t('How to use')}: {med['usage']}")
+                                    st.markdown(f"- **{med['name']}** by {med['company']} – {med['price']} (⭐ {med['rating']})")
+                                    st.markdown(f"  - {t('How to use')}: {med['usage']} – [Buy]({med['link']})")
                         st.info(t("⚠️ Consult your local agriculture officer before treatment"))
         with col2:
             st.subheader(t("Take a Photo"))
@@ -538,7 +598,6 @@ elif page == t("Disease Detection"):
                         st.write(f"**{t('Disease')}:** {disease}")
                         st.info(t("⚠️ Consult your local agriculture officer before treatment"))
 
-# ---- Disease Database (unchanged) ----
 elif page == t("Disease Database"):
     st.markdown(f'<div class="main-header"><h1>📚 {t("Disease Database")}</h1><p>{t("Comprehensive information about crop diseases")}</p></div>', unsafe_allow_html=True)
     search = st.text_input(t("🔍 Search diseases"))
@@ -558,9 +617,8 @@ elif page == t("Disease Database"):
             st.markdown(f"**{t('Recommended Medicines')}:**")
             for med in info['medicines']:
                 st.markdown(f"- **{med['name']}** by {med['company']} – {med['price']} (⭐ {med['rating']})")
-                st.markdown(f"  - {t('How to use')}: {med['usage']}")
+                st.markdown(f"  - {t('How to use')}: {med['usage']} – [Buy]({med['link']})")
 
-# ---- Officers & Appointments (unchanged) ----
 elif page == t("Officers & Appointments"):
     st.markdown(f'<div class="main-header"><h1>👨‍🌾 {t("Agricultural Officers & Appointments")}</h1><p>{t("Find nearby officers and schedule consultations")}</p></div>', unsafe_allow_html=True)
     if not st.session_state.logged_in:
@@ -600,7 +658,6 @@ elif page == t("Officers & Appointments"):
         else:
             st.info(t("No officers found in this district."))
 
-# ---- Live Data (unchanged) ----
 elif page == t("Live Data"):
     st.markdown(f'<div class="main-header"><h1>📊 {t("Live Crop Health Monitoring")}</h1><p>{t("Real-time data and disease risk assessment")}</p></div>', unsafe_allow_html=True)
     temp = random.uniform(20,35)
@@ -637,7 +694,6 @@ elif page == t("Live Data"):
     fig2.update_layout(title=t('7-Day Temperature Forecast'), xaxis_title=t('Date'), yaxis_title=t('Temperature (°C)'))
     st.plotly_chart(fig2, use_container_width=True)
 
-# ---- Assistant (combined chatbot & voice) ----
 elif page == t("Assistant"):
     st.markdown(f'<div class="main-header"><h1>🤖 {t("Assistant")}</h1><p>{t("Choose your preferred way to interact")}</p></div>', unsafe_allow_html=True)
     if not st.session_state.logged_in:
@@ -648,14 +704,12 @@ elif page == t("Assistant"):
         # ---------- Chat Tab ----------
         with tab1:
             st.subheader(t("Chat"))
-            # Display chat history
             for msg in st.session_state.chat_history:
                 if msg["role"] == "user":
                     st.markdown(f'<div class="chat-message user-message"><b>{t("You")}:</b> {msg["content"]}</div>', unsafe_allow_html=True)
                 else:
                     st.markdown(f'<div class="chat-message bot-message"><b>{t("Assistant")}:</b> {msg["content"]}</div>', unsafe_allow_html=True)
 
-            # Input box
             user_input = st.text_input(t("Type your message here..."), key="chat_input")
             if st.button(t("Send")):
                 if user_input:
@@ -669,7 +723,6 @@ elif page == t("Assistant"):
             st.subheader(t("Voice"))
             st.info(t("Click 'Start Listening' and speak a command. I will speak back."))
 
-            # JavaScript for speech recognition and synthesis
             voice_html = f"""
             <div style="text-align: center;">
                 <button id="start" style="background-color: #1e3c72; color: white; padding: 12px 30px; border: none; border-radius: 50px; margin: 10px;">🎤 {t('Start Listening')}</button>
@@ -699,20 +752,15 @@ elif page == t("Assistant"):
                 recognition.onresult = (event) => {{
                     const transcript = event.results[0][0].transcript;
                     document.getElementById('result').innerHTML = '{t("You said:")} ' + transcript;
-                    // Send to Streamlit via fetch
-                    fetch(window.location.href, {{
-                        method: 'POST',
-                        headers: {{'Content-Type': 'application/json'}},
-                        body: JSON.stringify({{'voice_command': transcript}})
-                    }})
-                    .then(response => response.json())
-                    .then(data => {{
-                        document.getElementById('response').innerHTML = '{t("Assistant:")} ' + data.reply;
-                        // Speak the reply
-                        const utterance = new SpeechSynthesisUtterance(data.reply);
-                        utterance.lang = '{st.session_state.language}';
-                        synth.speak(utterance);
-                    }});
+
+                    // Send to Python via fetch (simplified – using a dummy endpoint)
+                    // Since Streamlit can't handle POST easily, we'll use a text input fallback.
+                    // Instead, we'll just simulate a response.
+                    const reply = "I heard you say: " + transcript + ". This is a simulated response.";
+                    document.getElementById('response').innerHTML = '{t("Assistant:")} ' + reply;
+                    const utterance = new SpeechSynthesisUtterance(reply);
+                    utterance.lang = '{st.session_state.language}';
+                    synth.speak(utterance);
                 }};
 
                 recognition.onerror = (event) => {{
@@ -722,17 +770,13 @@ elif page == t("Assistant"):
             """
             st.components.v1.html(voice_html, height=300)
 
-            # Handle voice command (POST request simulation)
-            # Streamlit doesn't directly handle POST; we'll use session state for the last command
-            # This is a simplified version; for full integration, you'd need a more complex setup.
-            # We'll just use a text input fallback for demo.
             st.markdown("---")
             st.write(t("Or type a command:"))
             cmd = st.text_input(t("Command"), key="voice_cmd")
             if st.button(t("Send Command")):
                 reply = chatbot_response(cmd)
                 st.info(f"{t('Assistant')}: {reply}")
-                # Speak using JavaScript (we can inject a small script)
+                # Speak using JavaScript
                 speak_script = f"""
                 <script>
                     const utterance = new SpeechSynthesisUtterance(`{reply}`);
@@ -742,14 +786,12 @@ elif page == t("Assistant"):
                 """
                 st.components.v1.html(speak_script, height=0)
 
-# ---- Crop Calendar (unchanged) ----
 elif page == t("Crop Calendar"):
     st.markdown(f'<div class="main-header"><h1>📅 {t("Crop Calendar")}</h1><p>{t("Optimal planting and harvesting times for common crops")}</p></div>', unsafe_allow_html=True)
     df = pd.DataFrame.from_dict(CROP_CALENDAR, orient='index').reset_index()
     df.columns = [t("Crop"), t("Planting Season"), t("Harvesting Season")]
     st.table(df)
 
-# ---- Weather (unchanged) ----
 elif page == t("Weather"):
     st.markdown(f'<div class="main-header"><h1>☀️ {t("Weather Forecast")}</h1><p>{t("Current weather conditions for your region")}</p></div>', unsafe_allow_html=True)
     city = st.text_input(t("Enter city"), value="Delhi")
@@ -768,7 +810,6 @@ elif page == t("Weather"):
             st.write(f"**{t('Weather')}:** {data['weather'][0]['description'].capitalize()}")
             st.write(f"**{t('Wind Speed')}:** {data['wind']['speed']} m/s")
 
-# ---- About (unchanged) ----
 elif page == t("About"):
     st.markdown(f'<div class="main-header"><h1>ℹ️ {t("About")}</h1><p>{t("AI-Powered Crop Disease Detection System")}</p></div>', unsafe_allow_html=True)
     col1, col2 = st.columns(2)
@@ -791,4 +832,4 @@ elif page == t("About"):
             - {t('Supabase for persistent storage')}
             - {t('OpenWeatherMap API')}
         """)
-    st.info(t("Version 6.1 | © 2025 Crop Care AI | Built with ❤️ for farmers"))
+    st.info(t("Version 7.0 | © 2025 Crop Care AI | Built with ❤️ for farmers"))
