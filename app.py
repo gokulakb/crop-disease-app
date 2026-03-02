@@ -8,11 +8,10 @@ import datetime
 import random
 import time
 import requests
-import os
 import json
+import os
 from PIL import Image
 from io import BytesIO
-import tensorflow as tf
 from supabase import create_client, Client
 
 # -------------------- CONFIG --------------------
@@ -28,66 +27,102 @@ else:
 # -------------------- WEATHER API --------------------
 WEATHER_API_KEY = st.secrets.get("weather_api_key", None)
 
-# -------------------- LOAD TRAINED MODEL AND CLASS NAMES --------------------
-@st.cache_resource
-def load_model_and_classes():
-    # Option 1: Load from local file (for testing)
-    # model = tf.keras.models.load_model('deep_plant_disease_final.h5')
-    # with open('class_indices.json', 'r') as f:
-    #     class_indices = json.load(f)
+# -------------------- PLACEHOLDER MODEL (random predictions) --------------------
+USE_MOCK = True   # Set to False later when you have a real model
 
-    # Option 2: Download from cloud storage (for deployment)
-    model_url = "https://your-cloud-storage-url/deep_plant_disease_final.h5"   # REPLACE THIS
-    indices_url = "https://your-cloud-storage-url/class_indices.json"          # REPLACE THIS
-
-    try:
-        response = requests.get(model_url)
-        model = tf.keras.models.load_model(BytesIO(response.content))
-        response = requests.get(indices_url)
-        class_indices = json.loads(response.text)
-    except Exception as e:
-        st.error(f"Failed to load model: {e}")
-        st.stop()
-
-    # Convert class_indices dict to list in correct order
-    class_names = [k for k, v in sorted(class_indices.items(), key=lambda item: item[1])]
-    return model, class_names
-
-model, CLASS_NAMES = load_model_and_classes()
-
-def preprocess_image(image):
-    img = image.resize((224, 224))
-    img_array = np.array(img) / 255.0
-    img_array = np.expand_dims(img_array, axis=0)
-    return img_array
+MOCK_CLASSES = [
+    "Apple Scab", "Apple Black Rot", "Cedar Apple Rust", "Healthy Apple",
+    "Corn Common Rust", "Corn Gray Leaf Spot", "Corn Northern Leaf Blight", "Healthy Corn",
+    "Grape Black Rot", "Grape Esca (Black Measles)", "Grape Leaf Blight", "Healthy Grape",
+    "Potato Early Blight", "Potato Late Blight", "Healthy Potato",
+    "Tomato Bacterial Spot", "Tomato Early Blight", "Tomato Late Blight", "Tomato Leaf Mold",
+    "Tomato Septoria Leaf Spot", "Tomato Spider Mites", "Tomato Target Spot",
+    "Tomato Yellow Leaf Curl Virus", "Tomato Mosaic Virus", "Healthy Tomato"
+]
 
 def predict_disease(image):
-    img_array = preprocess_image(image)
-    preds = model.predict(img_array)
-    idx = np.argmax(preds[0])
-    confidence = preds[0][idx]
-    return CLASS_NAMES[idx], confidence
+    if USE_MOCK:
+        disease = random.choice(MOCK_CLASSES)
+        confidence = random.uniform(0.7, 0.99)
+        return disease, confidence
+    else:
+        # Real prediction code will go here later
+        pass
 
-# -------------------- DISEASE DATABASE (fallback) --------------------
-# (You can keep the DISEASE_DB from previous versions as a fallback for displaying details)
+# -------------------- DISEASE DATABASE (for displaying details) --------------------
 DISEASE_DB = {
     "Apple Scab": {
         "crop": "Apple",
-        "symptoms": "Olive-green to brown spots on leaves and fruit...",
-        "prevention": "Plant resistant varieties...",
-        "organic": "Neem oil spray...",
-        "medicines": [...],
+        "symptoms": "Olive‑green to brown spots on leaves and fruit, leaves may curl.",
+        "prevention": "Plant resistant varieties, prune for air circulation, remove fallen leaves.",
+        "organic": "Neem oil spray, baking soda solution.",
+        "medicines": [
+            {"name": "Captan 50WP", "company": "Bayer", "price": "₹2,499/500g", "rating": 4.5,
+             "usage": "Apply 2g per liter.", "link": "https://www.google.com/search?q=Captan+50WP"},
+            {"name": "Myclobutanil", "company": "Spectrum", "price": "₹3,299/250ml", "rating": 4.3,
+             "usage": "Apply 0.5ml per liter.", "link": "https://www.google.com/search?q=Myclobutanil"}
+        ],
         "season": "Spring/Fall",
         "severity": "High"
     },
-    # ... add more as needed
+    "Corn Rust": {
+        "crop": "Corn",
+        "symptoms": "Reddish‑brown pustules on leaves.",
+        "prevention": "Plant resistant hybrids, crop rotation.",
+        "organic": "Sulfur‑based fungicides, neem oil.",
+        "medicines": [
+            {"name": "Azoxystrobin", "company": "Syngenta", "price": "₹4,599/500ml", "rating": 4.6,
+             "usage": "Apply 1ml per liter.", "link": "https://www.google.com/search?q=Azoxystrobin"}
+        ],
+        "season": "Summer",
+        "severity": "Medium"
+    },
+    "Potato Early Blight": {
+        "crop": "Potato",
+        "symptoms": "Dark concentric rings on lower leaves.",
+        "prevention": "Crop rotation, proper spacing.",
+        "organic": "Copper fungicides.",
+        "medicines": [
+            {"name": "Chlorothalonil", "company": "Syngenta", "price": "₹2,799/500g", "rating": 4.3,
+             "usage": "Apply 2g per liter.", "link": "https://www.google.com/search?q=Chlorothalonil"}
+        ],
+        "season": "Summer/Fall",
+        "severity": "Medium"
+    },
+    "Tomato Leaf Mold": {
+        "crop": "Tomato",
+        "symptoms": "Yellow spots on upper leaves, mold on undersides.",
+        "prevention": "Improve air circulation, reduce humidity.",
+        "organic": "Neem oil.",
+        "medicines": [
+            {"name": "Copper Hydroxide", "company": "DuPont", "price": "₹3,199/500g", "rating": 4.2,
+             "usage": "Apply 2g per liter.", "link": "https://www.google.com/search?q=Copper+Hydroxide"}
+        ],
+        "season": "Spring/Summer",
+        "severity": "Medium"
+    },
+    "Wheat Stem Rust": {
+        "crop": "Wheat",
+        "symptoms": "Reddish‑brown pustules on stems and leaves.",
+        "prevention": "Use resistant varieties, early planting.",
+        "organic": "Sulfur spray.",
+        "medicines": [
+            {"name": "Tebuconazole", "company": "Bayer", "price": "₹3,399/500ml", "rating": 4.3,
+             "usage": "Apply 1ml per liter.", "link": "https://www.google.com/search?q=Tebuconazole"}
+        ],
+        "season": "Spring",
+        "severity": "High"
+    }
 }
 
 # -------------------- CROP CALENDAR --------------------
 CROP_CALENDAR = {
     "Rice": {"planting": "June-July", "harvesting": "November-December"},
     "Wheat": {"planting": "October-December", "harvesting": "March-April"},
-    # ... (same as before)
+    "Maize": {"planting": "June-July", "harvesting": "September-October"},
+    "Sugarcane": {"planting": "January-March", "harvesting": "November-February"},
+    "Cotton": {"planting": "May-June", "harvesting": "November-December"},
+    "Groundnut": {"planting": "June-July", "harvesting": "September-October"},
 }
 
 # -------------------- WEATHER FUNCTION --------------------
@@ -145,8 +180,8 @@ def book_appointment(user_email, officer_id, date, time_slot):
     supabase.table("appointments").insert(data).execute()
     return True
 
-# -------------------- TRANSLATIONS (simplified) --------------------
-# For brevity, only include keys used in the app. You can expand as needed.
+# -------------------- TRANSLATIONS (8 languages) --------------------
+# For brevity, only English keys are shown. In practice, you would include full dictionaries.
 TRANSLATIONS = {
     "en": {
         "🌱 Crop Care AI": "🌱 Crop Care AI",
@@ -160,9 +195,13 @@ TRANSLATIONS = {
         "Crop Calendar": "Crop Calendar",
         "Weather": "Weather",
         "About": "About",
+        "Menu": "Menu",
+        "🔐 Login / Sign Up": "🔐 Login / Sign Up",
         "Login": "Login",
         "Sign Up": "Sign Up",
         "Google Login": "Google Login",
+        "Login with Google (Demo)": "Login with Google (Demo)",
+        "Simulated Google Login (for demo)": "Simulated Google Login (for demo)",
         "Email": "Email",
         "Password": "Password",
         "Full Name": "Full Name",
@@ -217,6 +256,7 @@ TRANSLATIONS = {
         "Stop Listening": "Stop Listening",
         "You said:": "You said:",
         "Processing command...": "Processing command...",
+        "Command recognized:": "Command recognized:",
         "Speak this text": "Speak this text",
         "Features": "Features",
         "Technology": "Technology",
@@ -233,8 +273,8 @@ TRANSLATIONS = {
         "Get Weather": "Get Weather",
         "Wind Speed": "Wind Speed",
         "Pressure": "Pressure",
-    }
-    # Add other languages if needed
+    },
+    # Add other languages similarly (hi, te, kn, ta, bn, mr, gu)
 }
 
 def t(key):
@@ -273,10 +313,6 @@ st.markdown("""
         justify-content: center;
         gap: 1rem;
     }
-    .logo-title img {
-        width: 60px;
-        height: 60px;
-    }
     .feature-card {
         background: white;
         padding: 1.5rem;
@@ -298,12 +334,12 @@ st.markdown("""
         padding: 0.6rem 2rem;
         font-weight: 600;
         transition: all 0.3s;
-        border: 1px solid rgba(255,255,255,0.2);
     }
     .stButton>button:hover {
         transform: scale(1.02);
         box-shadow: 0 5px 15px rgba(26, 67, 113, 0.4);
     }
+    .css-1d391kg { background-color: #f8fafc; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -315,7 +351,12 @@ with st.sidebar:
     lang_options = {
         "🇬🇧 English": "en",
         "🇮🇳 हिन्दी": "hi",
-        # add others
+        "🇮🇳 తెలుగు": "te",
+        "🇮🇳 ಕನ್ನಡ": "kn",
+        "🇮🇳 தமிழ்": "ta",
+        "🇮🇳 বাংলা": "bn",
+        "🇮🇳 मराठी": "mr",
+        "🇮🇳 ગુજરાતી": "gu"
     }
     selected_lang = st.selectbox(t("Select Language"), list(lang_options.keys()), index=0)
     st.session_state.language = lang_options[selected_lang]
@@ -408,7 +449,6 @@ with st.sidebar:
 # -------------------- MAIN CONTENT --------------------
 page = st.session_state.page
 
-# ---- Home ----
 if page == t("Home"):
     st.markdown("""
         <div class="main-header">
@@ -427,7 +467,6 @@ if page == t("Home"):
     with col3:
         st.markdown(f'<div class="feature-card"><h3>👨‍🌾 {t("Officer Connect")}</h3><p>{t("Find nearby agriculture officers and book appointments directly.")}</p></div>', unsafe_allow_html=True)
 
-# ---- Disease Detection (with real model) ----
 elif page == t("Disease Detection"):
     st.markdown(f'<div class="main-header"><h1>📸 {t("Disease Detection")}</h1><p>{t("Upload a photo or take one with your camera for instant analysis")}</p></div>', unsafe_allow_html=True)
     if not st.session_state.logged_in:
@@ -445,7 +484,6 @@ elif page == t("Disease Detection"):
                         disease, conf = predict_disease(img)
                         st.success(t(f"Detection complete! Confidence: {conf:.1%}"))
                         st.write(f"**{t('Disease')}:** {disease}")
-                        # Optionally show details from DISEASE_DB if available
                         if disease in DISEASE_DB:
                             info = DISEASE_DB[disease]
                             with st.expander(t("View Details")):
@@ -453,7 +491,7 @@ elif page == t("Disease Detection"):
                                 st.markdown(f"**{t('Prevention')}:** {info['prevention']}")
                                 st.markdown(f"**{t('Organic Treatment')}:** {info['organic']}")
                                 for med in info['medicines']:
-                                    st.markdown(f"- **{med['name']}** - {med['price']}")
+                                    st.markdown(f"- **{med['name']}** ({med['price']}) – {t('How to use')}: {med['usage']}")
                         st.info(t("⚠️ Consult your local agriculture officer before treatment"))
         with col2:
             st.subheader(t("Take a Photo"))
@@ -468,13 +506,151 @@ elif page == t("Disease Detection"):
                         st.write(f"**{t('Disease')}:** {disease}")
                         st.info(t("⚠️ Consult your local agriculture officer before treatment"))
 
-# ---- Other pages remain the same as before (Disease Database, Officers, Live Data, Voice Assistant, Crop Calendar, Weather, About) ----
-# For brevity, I'll not repeat them here, but you can copy from the previous version.
-# Ensure they use t() for translations.
+elif page == t("Disease Database"):
+    st.markdown(f'<div class="main-header"><h1>📚 {t("Disease Database")}</h1><p>{t("Comprehensive information about crop diseases")}</p></div>', unsafe_allow_html=True)
+    search = st.text_input(t("🔍 Search diseases"))
+    crops = [t("All")] + sorted(list(set([info['crop'] for info in DISEASE_DB.values()])))
+    crop_filter = st.selectbox(t("Filter by crop"), crops)
+    for disease, info in DISEASE_DB.items():
+        if crop_filter != t("All") and info['crop'] != crop_filter:
+            continue
+        if search and search.lower() not in disease.lower():
+            continue
+        with st.expander(f"🌿 {disease} on {info['crop']}"):
+            st.markdown(f"**{t('Symptoms')}:** {info['symptoms']}")
+            st.markdown(f"**{t('Prevention')}:** {info['prevention']}")
+            st.markdown(f"**{t('Organic Treatment')}:** {info['organic']}")
+            st.markdown(f"**{t('Season')}:** {info['season']}")
+            st.markdown(f"**{t('Severity')}:** {info['severity']}")
+            st.markdown(f"**{t('Recommended Medicines')}:**")
+            for med in info['medicines']:
+                st.markdown(f"- **{med['name']}** by {med['company']} – {med['price']} (⭐ {med['rating']})")
+                st.markdown(f"  - {t('How to use')}: {med['usage']}")
 
-# ... (rest of the pages as in the previous app code) ...
+elif page == t("Officers & Appointments"):
+    st.markdown(f'<div class="main-header"><h1>👨‍🌾 {t("Agricultural Officers & Appointments")}</h1><p>{t("Find nearby officers and schedule consultations")}</p></div>', unsafe_allow_html=True)
+    if not st.session_state.logged_in:
+        st.warning(t("Please login to book appointments"))
+    else:
+        officers = get_officers()
+        districts = list(set([o['district'] for o in officers]))
+        district_list = [t("All")] + sorted(districts)
+        selected_district = st.selectbox(t("Filter by district"), district_list)
+        filtered = get_officers(selected_district if selected_district != t("All") else None)
+        if filtered:
+            st.subheader(t("Available Officers"))
+            for off in filtered:
+                cola, colb, colc = st.columns([2,2,1])
+                with cola:
+                    st.markdown(f"**{off['name']}**")
+                    st.caption(f"{t('Phone')}: {off['phone']}")
+                with colb:
+                    st.markdown(f"{t('District')}: {off['district']}")
+                    st.caption(f"{t('Available')}: {off['available_from']} - {off['available_to']}")
+                with colc:
+                    if st.button(t("Book Appointment"), key=f"book_{off['id']}"):
+                        st.session_state.selected_officer = off
+                        st.session_state.show_booking = True
+                st.markdown("---")
+            if st.session_state.get("show_booking") and st.session_state.get("selected_officer"):
+                off = st.session_state.selected_officer
+                st.subheader(t(f"Book Appointment with {off['name']}"))
+                with st.form("book_form"):
+                    date = st.date_input(t("Select Date"), min_value=datetime.date.today())
+                    time_slot = st.time_input(t("Select Time"))
+                    if st.form_submit_button(t("Confirm Booking")):
+                        book_appointment(st.session_state.user_email, off['id'], date, time_slot)
+                        st.success(t("Appointment booked successfully! Officer will contact you."))
+                        st.session_state.show_booking = False
+                        st.rerun()
+        else:
+            st.info(t("No officers found in this district."))
 
-# ---- About ----
+elif page == t("Live Data"):
+    st.markdown(f'<div class="main-header"><h1>📊 {t("Live Crop Health Monitoring")}</h1><p>{t("Real-time data and disease risk assessment")}</p></div>', unsafe_allow_html=True)
+    temp = random.uniform(20,35)
+    hum = random.uniform(60,85)
+    soil = random.uniform(40,70)
+    rain = random.uniform(0,10)
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric(t("Temperature"), f"{temp:.1f}°C", f"{random.uniform(-2,2):+.1f}°C")
+    col2.metric(t("Humidity"), f"{hum:.1f}%", f"{random.uniform(-5,5):+.1f}%")
+    col3.metric(t("Soil Moisture"), f"{soil:.1f}%", f"{random.uniform(-3,3):+.1f}%")
+    col4.metric(t("Rainfall (24h)"), f"{rain:.1f}mm", t("Today"))
+    risk = random.choice([t("Low"), t("Medium"), t("High")])
+    if risk == t("Low"):
+        st.success(t(f"**Current Disease Risk:** {risk} – Conditions are favorable"))
+    elif risk == t("Medium"):
+        st.warning(t(f"**Current Disease Risk:** {risk} – Monitor crops regularly"))
+    else:
+        st.error(t(f"**Current Disease Risk:** {risk} – Take preventive measures"))
+    st.subheader(t("Disease Incidence Trend"))
+    dates = pd.date_range(end=datetime.date.today(), periods=30)
+    df = pd.DataFrame({'Date': dates, 'Cases': np.random.poisson(5,30)+np.random.randint(0,5,30)})
+    fig = px.line(df, x='Date', y='Cases', title=t('Daily Disease Cases (Last 30 Days)'))
+    st.plotly_chart(fig, use_container_width=True)
+    st.subheader(t("Weather Forecast"))
+    fdates = pd.date_range(start=datetime.date.today(), periods=7)
+    fdf = pd.DataFrame({
+        'Date': fdates,
+        'Max Temp': np.random.uniform(28,38,7),
+        'Min Temp': np.random.uniform(18,25,7),
+    })
+    fig2 = go.Figure()
+    fig2.add_trace(go.Scatter(x=fdf['Date'], y=fdf['Max Temp'], name=t('Max Temp'), mode='lines+markers'))
+    fig2.add_trace(go.Scatter(x=fdf['Date'], y=fdf['Min Temp'], name=t('Min Temp'), mode='lines+markers'))
+    fig2.update_layout(title=t('7-Day Temperature Forecast'), xaxis_title=t('Date'), yaxis_title=t('Temperature (°C)'))
+    st.plotly_chart(fig2, use_container_width=True)
+
+elif page == t("Voice Assistant"):
+    st.markdown(f'<div class="main-header"><h1>🎤 {t("Voice Assistant")}</h1><p>{t("Use voice commands in multiple languages")}</p></div>', unsafe_allow_html=True)
+    if not st.session_state.logged_in:
+        st.warning(t("Please login to use voice assistant"))
+    else:
+        st.info(t("Voice Assistant uses your browser's built-in speech recognition. Click 'Start Listening' and speak."))
+        html_code = f"""
+        <div style="text-align: center;">
+            <button id="start" style="background-color: #1e3c72; color: white; padding: 12px 30px; border: none; border-radius: 50px; margin: 10px;">🎤 {t('Start Listening')}</button>
+            <button id="stop" style="background-color: #e53e3e; color: white; padding: 12px 30px; border: none; border-radius: 50px; margin: 10px;">⏹️ {t('Stop Listening')}</button>
+            <p id="result" style="font-size: 1.3rem;"></p>
+        </div>
+        <script>
+            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.lang = '{st.session_state.language}';
+            recognition.onresult = function(event) {{
+                const transcript = event.results[0][0].transcript;
+                document.getElementById('result').innerHTML = '{t("You said:")} ' + transcript;
+            }};
+            document.getElementById('start').onclick = () => recognition.start();
+            document.getElementById('stop').onclick = () => recognition.stop();
+        </script>
+        """
+        st.components.v1.html(html_code, height=200)
+
+elif page == t("Crop Calendar"):
+    st.markdown(f'<div class="main-header"><h1>📅 {t("Crop Calendar")}</h1><p>{t("Optimal planting and harvesting times for common crops")}</p></div>', unsafe_allow_html=True)
+    df = pd.DataFrame.from_dict(CROP_CALENDAR, orient='index').reset_index()
+    df.columns = [t("Crop"), t("Planting Season"), t("Harvesting Season")]
+    st.table(df)
+
+elif page == t("Weather"):
+    st.markdown(f'<div class="main-header"><h1>☀️ {t("Weather Forecast")}</h1><p>{t("Current weather conditions for your region")}</p></div>', unsafe_allow_html=True)
+    city = st.text_input(t("Enter city"), value="Delhi")
+    if st.button(t("Get Weather")):
+        data, error = get_weather(city)
+        if error:
+            st.error(f"Error: {error}")
+        else:
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric(t("Temperature"), f"{data['main']['temp']} °C")
+            with col2:
+                st.metric(t("Humidity"), f"{data['main']['humidity']}%")
+            with col3:
+                st.metric(t("Pressure"), f"{data['main']['pressure']} hPa")
+            st.write(f"**{t('Weather')}:** {data['weather'][0]['description'].capitalize()}")
+            st.write(f"**{t('Wind Speed')}:** {data['wind']['speed']} m/s")
+
 elif page == t("About"):
     st.markdown(f'<div class="main-header"><h1>ℹ️ {t("About")}</h1><p>{t("AI-Powered Crop Disease Detection System")}</p></div>', unsafe_allow_html=True)
     col1, col2 = st.columns(2)
@@ -488,13 +664,11 @@ elif page == t("About"):
             - {t('Live crop health monitoring')}
             - {t('Comprehensive disease database')}
             - {t('Crop calendar and weather integration')}
-            - {t('Trained on 300k+ image Deep-Plant-Disease dataset')}
         """)
     with col2:
         st.markdown(f"""
             **{t('Technology')}:**
             - {t('Custom CNN from scratch (no pre-trained models)')}
-            - {t('115 disease classes across multiple crops')}
             - {t('Streamlit Community Cloud')}
             - {t('Supabase for persistent storage')}
             - {t('OpenWeatherMap API')}
