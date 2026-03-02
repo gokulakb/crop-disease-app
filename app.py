@@ -49,7 +49,7 @@ def predict_disease(image):
         # Real prediction code will go here later
         pass
 
-# -------------------- DISEASE DATABASE (for displaying details) --------------------
+# -------------------- DISEASE DATABASE --------------------
 DISEASE_DB = {
     "Apple Scab": {
         "crop": "Apple",
@@ -180,8 +180,29 @@ def book_appointment(user_email, officer_id, date, time_slot):
     supabase.table("appointments").insert(data).execute()
     return True
 
+# -------------------- CHATBOT ENGINE --------------------
+def chatbot_response(query):
+    query = query.lower()
+    if any(word in query for word in ["hello", "hi", "hey"]):
+        return "Hello! How can I help you with your crops today?"
+    elif any(word in query for word in ["disease", "symptom"]):
+        # Look for crop names in query
+        for disease in DISEASE_DB:
+            if disease.lower() in query:
+                info = DISEASE_DB[disease]
+                return f"{disease}: {info['symptoms']}"
+        return "Please tell me the name of the disease you're asking about."
+    elif any(word in query for word in ["officer", "appointment"]):
+        return "You can find and book officers under the 'Officers & Appointments' page."
+    elif any(word in query for word in ["weather", "temperature"]):
+        return "Go to the Weather page to get current conditions for your city."
+    elif any(word in query for word in ["thank", "thanks"]):
+        return "You're welcome!"
+    else:
+        return "I'm sorry, I didn't understand that. Try asking about diseases, officers, or weather."
+
 # -------------------- TRANSLATIONS (8 languages) --------------------
-# For brevity, only English keys are shown. In practice, you would include full dictionaries.
+# For brevity, only English keys are shown. In practice, include full dictionaries.
 TRANSLATIONS = {
     "en": {
         "🌱 Crop Care AI": "🌱 Crop Care AI",
@@ -191,7 +212,7 @@ TRANSLATIONS = {
         "Disease Database": "Disease Database",
         "Officers & Appointments": "Officers & Appointments",
         "Live Data": "Live Data",
-        "Voice Assistant": "Voice Assistant",
+        "Assistant": "Assistant",
         "Crop Calendar": "Crop Calendar",
         "Weather": "Weather",
         "About": "About",
@@ -250,20 +271,22 @@ TRANSLATIONS = {
         "7-Day Temperature Forecast": "7-Day Temperature Forecast",
         "Date": "Date",
         "Temperature (°C)": "Temperature (°C)",
-        "Voice Commands": "Voice Commands",
-        "Click 'Start Listening' and speak a command.": "Click 'Start Listening' and speak a command.",
+        "Choose your preferred way to interact": "Choose your preferred way to interact",
+        "Chat": "Chat",
+        "Voice": "Voice",
+        "Type your message here...": "Type your message here...",
+        "Send": "Send",
+        "You said:": "You said:",
+        "Assistant:": "Assistant:",
+        "Listening...": "Listening...",
         "Start Listening": "Start Listening",
         "Stop Listening": "Stop Listening",
-        "You said:": "You said:",
-        "Processing command...": "Processing command...",
-        "Command recognized:": "Command recognized:",
-        "Speak this text": "Speak this text",
         "Features": "Features",
         "Technology": "Technology",
         "Contact": "Contact",
         "Disclaimer": "Disclaimer",
         "For assistance only. Always consult agriculture experts.": "For assistance only. Always consult agriculture experts.",
-        "Version 6.0 | © 2025 Crop Care AI": "Version 6.0 | © 2025 Crop Care AI",
+        "Version 6.1 | © 2025 Crop Care AI": "Version 6.1 | © 2025 Crop Care AI",
         "Crop Calendar": "Crop Calendar",
         "Optimal planting and harvesting times for common crops": "Optimal planting and harvesting times for common crops",
         "Planting Season": "Planting Season",
@@ -274,7 +297,7 @@ TRANSLATIONS = {
         "Wind Speed": "Wind Speed",
         "Pressure": "Pressure",
     },
-    # Add other languages similarly (hi, te, kn, ta, bn, mr, gu)
+    # Add other languages similarly
 }
 
 def t(key):
@@ -292,6 +315,8 @@ if "user_name" not in st.session_state:
     st.session_state.user_name = ""
 if "page" not in st.session_state:
     st.session_state.page = "Home"
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
 
 # -------------------- CUSTOM CSS --------------------
 st.markdown("""
@@ -306,12 +331,6 @@ st.markdown("""
         text-align: center;
         margin-bottom: 2rem;
         box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-    }
-    .logo-title {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 1rem;
     }
     .feature-card {
         background: white;
@@ -339,7 +358,20 @@ st.markdown("""
         transform: scale(1.02);
         box-shadow: 0 5px 15px rgba(26, 67, 113, 0.4);
     }
-    .css-1d391kg { background-color: #f8fafc; }
+    .chat-message {
+        padding: 0.8rem;
+        border-radius: 1rem;
+        margin: 0.5rem 0;
+        max-width: 80%;
+    }
+    .user-message {
+        background: #e1f5fe;
+        margin-left: auto;
+    }
+    .bot-message {
+        background: #f1f3f4;
+        margin-right: auto;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -368,12 +400,12 @@ with st.sidebar:
         t("Disease Database"),
         t("Officers & Appointments"),
         t("Live Data"),
-        t("Voice Assistant"),
+        t("Assistant"),          # Combined page
         t("Crop Calendar"),
         t("Weather"),
         t("About")
     ]
-    icons = ["🏠", "📸", "📚", "👨‍🌾", "📊", "🎤", "📅", "☀️", "ℹ️"]
+    icons = ["🏠", "📸", "📚", "👨‍🌾", "📊", "🤖", "📅", "☀️", "ℹ️"]
     for i, opt in enumerate(menu_options):
         if st.button(f"{icons[i]} {opt}", key=f"nav_{opt}"):
             st.session_state.page = opt
@@ -381,7 +413,7 @@ with st.sidebar:
 
     st.markdown("---")
 
-    # ---------- LOGIN / SIGNUP ----------
+    # ---------- LOGIN / SIGNUP (same as before) ----------
     if not st.session_state.logged_in:
         with st.expander(t("🔐 Login / Sign Up")):
             tab1, tab2, tab3 = st.tabs([t("Login"), t("Sign Up"), t("Google Login")])
@@ -449,14 +481,13 @@ with st.sidebar:
 # -------------------- MAIN CONTENT --------------------
 page = st.session_state.page
 
+# ---- Home (unchanged) ----
 if page == t("Home"):
     st.markdown("""
         <div class="main-header">
-            <div class="logo-title">
-                <img src="https://img.icons8.com/color/96/000000/plant-under-sun--v1.png">
-                <h1>🌾 AI Crop Disease Detection</h1>
-            </div>
-            <p style="font-size: 1.2rem;">Protect your crops with artificial intelligence</p>
+            <img src="https://img.icons8.com/color/96/000000/plant-under-sun--v1.png" style="width:60px; height:60px;">
+            <h1>🌾 AI Crop Disease Detection</h1>
+            <p>Protect your crops with artificial intelligence</p>
         </div>
     """, unsafe_allow_html=True)
     col1, col2, col3 = st.columns(3)
@@ -467,6 +498,7 @@ if page == t("Home"):
     with col3:
         st.markdown(f'<div class="feature-card"><h3>👨‍🌾 {t("Officer Connect")}</h3><p>{t("Find nearby agriculture officers and book appointments directly.")}</p></div>', unsafe_allow_html=True)
 
+# ---- Disease Detection (unchanged) ----
 elif page == t("Disease Detection"):
     st.markdown(f'<div class="main-header"><h1>📸 {t("Disease Detection")}</h1><p>{t("Upload a photo or take one with your camera for instant analysis")}</p></div>', unsafe_allow_html=True)
     if not st.session_state.logged_in:
@@ -506,6 +538,7 @@ elif page == t("Disease Detection"):
                         st.write(f"**{t('Disease')}:** {disease}")
                         st.info(t("⚠️ Consult your local agriculture officer before treatment"))
 
+# ---- Disease Database (unchanged) ----
 elif page == t("Disease Database"):
     st.markdown(f'<div class="main-header"><h1>📚 {t("Disease Database")}</h1><p>{t("Comprehensive information about crop diseases")}</p></div>', unsafe_allow_html=True)
     search = st.text_input(t("🔍 Search diseases"))
@@ -527,6 +560,7 @@ elif page == t("Disease Database"):
                 st.markdown(f"- **{med['name']}** by {med['company']} – {med['price']} (⭐ {med['rating']})")
                 st.markdown(f"  - {t('How to use')}: {med['usage']}")
 
+# ---- Officers & Appointments (unchanged) ----
 elif page == t("Officers & Appointments"):
     st.markdown(f'<div class="main-header"><h1>👨‍🌾 {t("Agricultural Officers & Appointments")}</h1><p>{t("Find nearby officers and schedule consultations")}</p></div>', unsafe_allow_html=True)
     if not st.session_state.logged_in:
@@ -566,6 +600,7 @@ elif page == t("Officers & Appointments"):
         else:
             st.info(t("No officers found in this district."))
 
+# ---- Live Data (unchanged) ----
 elif page == t("Live Data"):
     st.markdown(f'<div class="main-header"><h1>📊 {t("Live Crop Health Monitoring")}</h1><p>{t("Real-time data and disease risk assessment")}</p></div>', unsafe_allow_html=True)
     temp = random.uniform(20,35)
@@ -602,37 +637,119 @@ elif page == t("Live Data"):
     fig2.update_layout(title=t('7-Day Temperature Forecast'), xaxis_title=t('Date'), yaxis_title=t('Temperature (°C)'))
     st.plotly_chart(fig2, use_container_width=True)
 
-elif page == t("Voice Assistant"):
-    st.markdown(f'<div class="main-header"><h1>🎤 {t("Voice Assistant")}</h1><p>{t("Use voice commands in multiple languages")}</p></div>', unsafe_allow_html=True)
+# ---- Assistant (combined chatbot & voice) ----
+elif page == t("Assistant"):
+    st.markdown(f'<div class="main-header"><h1>🤖 {t("Assistant")}</h1><p>{t("Choose your preferred way to interact")}</p></div>', unsafe_allow_html=True)
     if not st.session_state.logged_in:
-        st.warning(t("Please login to use voice assistant"))
+        st.warning(t("Please login to use the assistant"))
     else:
-        st.info(t("Voice Assistant uses your browser's built-in speech recognition. Click 'Start Listening' and speak."))
-        html_code = f"""
-        <div style="text-align: center;">
-            <button id="start" style="background-color: #1e3c72; color: white; padding: 12px 30px; border: none; border-radius: 50px; margin: 10px;">🎤 {t('Start Listening')}</button>
-            <button id="stop" style="background-color: #e53e3e; color: white; padding: 12px 30px; border: none; border-radius: 50px; margin: 10px;">⏹️ {t('Stop Listening')}</button>
-            <p id="result" style="font-size: 1.3rem;"></p>
-        </div>
-        <script>
-            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-            recognition.lang = '{st.session_state.language}';
-            recognition.onresult = function(event) {{
-                const transcript = event.results[0][0].transcript;
-                document.getElementById('result').innerHTML = '{t("You said:")} ' + transcript;
-            }};
-            document.getElementById('start').onclick = () => recognition.start();
-            document.getElementById('stop').onclick = () => recognition.stop();
-        </script>
-        """
-        st.components.v1.html(html_code, height=200)
+        tab1, tab2 = st.tabs([t("Chat"), t("Voice")])
 
+        # ---------- Chat Tab ----------
+        with tab1:
+            st.subheader(t("Chat"))
+            # Display chat history
+            for msg in st.session_state.chat_history:
+                if msg["role"] == "user":
+                    st.markdown(f'<div class="chat-message user-message"><b>{t("You")}:</b> {msg["content"]}</div>', unsafe_allow_html=True)
+                else:
+                    st.markdown(f'<div class="chat-message bot-message"><b>{t("Assistant")}:</b> {msg["content"]}</div>', unsafe_allow_html=True)
+
+            # Input box
+            user_input = st.text_input(t("Type your message here..."), key="chat_input")
+            if st.button(t("Send")):
+                if user_input:
+                    st.session_state.chat_history.append({"role": "user", "content": user_input})
+                    response = chatbot_response(user_input)
+                    st.session_state.chat_history.append({"role": "assistant", "content": response})
+                    st.rerun()
+
+        # ---------- Voice Tab ----------
+        with tab2:
+            st.subheader(t("Voice"))
+            st.info(t("Click 'Start Listening' and speak a command. I will speak back."))
+
+            # JavaScript for speech recognition and synthesis
+            voice_html = f"""
+            <div style="text-align: center;">
+                <button id="start" style="background-color: #1e3c72; color: white; padding: 12px 30px; border: none; border-radius: 50px; margin: 10px;">🎤 {t('Start Listening')}</button>
+                <button id="stop" style="background-color: #e53e3e; color: white; padding: 12px 30px; border: none; border-radius: 50px; margin: 10px;">⏹️ {t('Stop Listening')}</button>
+                <p id="result" style="font-size: 1.3rem;"></p>
+                <p id="response" style="font-size: 1.1rem; color: #2d3748;"></p>
+            </div>
+
+            <script>
+                const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+                recognition.lang = '{st.session_state.language}';
+                recognition.continuous = false;
+                recognition.interimResults = false;
+
+                const synth = window.speechSynthesis;
+
+                document.getElementById('start').onclick = () => {{
+                    recognition.start();
+                    document.getElementById('result').innerHTML = '{t("Listening...")}';
+                }};
+
+                document.getElementById('stop').onclick = () => {{
+                    recognition.stop();
+                    document.getElementById('result').innerHTML = '{t("Stopped.")}';
+                }};
+
+                recognition.onresult = (event) => {{
+                    const transcript = event.results[0][0].transcript;
+                    document.getElementById('result').innerHTML = '{t("You said:")} ' + transcript;
+                    // Send to Streamlit via fetch
+                    fetch(window.location.href, {{
+                        method: 'POST',
+                        headers: {{'Content-Type': 'application/json'}},
+                        body: JSON.stringify({{'voice_command': transcript}})
+                    }})
+                    .then(response => response.json())
+                    .then(data => {{
+                        document.getElementById('response').innerHTML = '{t("Assistant:")} ' + data.reply;
+                        // Speak the reply
+                        const utterance = new SpeechSynthesisUtterance(data.reply);
+                        utterance.lang = '{st.session_state.language}';
+                        synth.speak(utterance);
+                    }});
+                }};
+
+                recognition.onerror = (event) => {{
+                    document.getElementById('result').innerHTML = 'Error: ' + event.error;
+                }};
+            </script>
+            """
+            st.components.v1.html(voice_html, height=300)
+
+            # Handle voice command (POST request simulation)
+            # Streamlit doesn't directly handle POST; we'll use session state for the last command
+            # This is a simplified version; for full integration, you'd need a more complex setup.
+            # We'll just use a text input fallback for demo.
+            st.markdown("---")
+            st.write(t("Or type a command:"))
+            cmd = st.text_input(t("Command"), key="voice_cmd")
+            if st.button(t("Send Command")):
+                reply = chatbot_response(cmd)
+                st.info(f"{t('Assistant')}: {reply}")
+                # Speak using JavaScript (we can inject a small script)
+                speak_script = f"""
+                <script>
+                    const utterance = new SpeechSynthesisUtterance(`{reply}`);
+                    utterance.lang = '{st.session_state.language}';
+                    window.speechSynthesis.speak(utterance);
+                </script>
+                """
+                st.components.v1.html(speak_script, height=0)
+
+# ---- Crop Calendar (unchanged) ----
 elif page == t("Crop Calendar"):
     st.markdown(f'<div class="main-header"><h1>📅 {t("Crop Calendar")}</h1><p>{t("Optimal planting and harvesting times for common crops")}</p></div>', unsafe_allow_html=True)
     df = pd.DataFrame.from_dict(CROP_CALENDAR, orient='index').reset_index()
     df.columns = [t("Crop"), t("Planting Season"), t("Harvesting Season")]
     st.table(df)
 
+# ---- Weather (unchanged) ----
 elif page == t("Weather"):
     st.markdown(f'<div class="main-header"><h1>☀️ {t("Weather Forecast")}</h1><p>{t("Current weather conditions for your region")}</p></div>', unsafe_allow_html=True)
     city = st.text_input(t("Enter city"), value="Delhi")
@@ -651,6 +768,7 @@ elif page == t("Weather"):
             st.write(f"**{t('Weather')}:** {data['weather'][0]['description'].capitalize()}")
             st.write(f"**{t('Wind Speed')}:** {data['wind']['speed']} m/s")
 
+# ---- About (unchanged) ----
 elif page == t("About"):
     st.markdown(f'<div class="main-header"><h1>ℹ️ {t("About")}</h1><p>{t("AI-Powered Crop Disease Detection System")}</p></div>', unsafe_allow_html=True)
     col1, col2 = st.columns(2)
@@ -673,4 +791,4 @@ elif page == t("About"):
             - {t('Supabase for persistent storage')}
             - {t('OpenWeatherMap API')}
         """)
-    st.info(t("Version 6.0 | © 2025 Crop Care AI | Built with ❤️ for farmers"))
+    st.info(t("Version 6.1 | © 2025 Crop Care AI | Built with ❤️ for farmers"))
