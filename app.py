@@ -17,12 +17,37 @@ from supabase import create_client, Client
 # -------------------- CONFIG --------------------
 st.set_page_config(page_title="Crop Disease Detection", page_icon="🌾", layout="wide")
 
-# -------------------- SUPABASE --------------------
-if "supabase_url" in st.secrets and "supabase_key" in st.secrets:
-    supabase: Client = create_client(st.secrets["supabase_url"], st.secrets["supabase_key"])
-else:
-    st.error("Supabase credentials not found. Please set them in Streamlit secrets.")
-    st.stop()
+# -------------------- SUPABASE CONNECTION WITH DIAGNOSTICS --------------------
+def init_supabase():
+    """Initialize Supabase client and test connection."""
+    if "supabase_url" not in st.secrets or "supabase_key" not in st.secrets:
+        st.error("Supabase credentials not found in Streamlit secrets. Please add them in Settings → Secrets.")
+        st.stop()
+    
+    url = st.secrets["supabase_url"].strip()
+    key = st.secrets["supabase_key"].strip()
+    
+    # Basic validation
+    if not url.startswith("https://"):
+        st.error("supabase_url must start with https://")
+        st.stop()
+    if not key.startswith("eyJ"):
+        st.error("supabase_key does not look like a valid JWT (should start with 'eyJ')")
+        st.stop()
+    
+    try:
+        client = create_client(url, key)
+        # Test connection by trying to fetch a single row from a table (if any)
+        # We'll just attempt to get the list of tables (this may fail if no permissions)
+        # Instead, do a simple ping:
+        client.table("users").select("email", count="exact").limit(0).execute()
+        return client
+    except Exception as e:
+        st.error(f"Supabase connection failed: {e}")
+        st.error("Please check your supabase_url and supabase_key in Streamlit secrets.")
+        st.stop()
+
+supabase = init_supabase()
 
 # -------------------- WEATHER API --------------------
 WEATHER_API_KEY = st.secrets.get("weather_api_key", None)
@@ -259,6 +284,7 @@ def chatbot_response(query):
     return "I'm sorry, I didn't understand that. Try asking about a specific disease, officers, or weather."
 
 # -------------------- TRANSLATIONS (8 languages) --------------------
+# For brevity, only English keys are shown. You must add other languages similarly.
 TRANSLATIONS = {
     "en": {
         "🌱 Crop Care AI": "🌱 Crop Care AI",
@@ -356,8 +382,7 @@ TRANSLATIONS = {
         "Command": "Command",
         "Send Command": "Send Command",
     },
-    # For brevity, other languages are omitted. You can add them following the same pattern.
-    # They should contain all keys above.
+    # Add other languages (hi, te, kn, ta, bn, mr, gu) with the same keys.
 }
 
 def t(key):
@@ -753,10 +778,9 @@ elif page == t("Assistant"):
                     const transcript = event.results[0][0].transcript;
                     document.getElementById('result').innerHTML = '{t("You said:")} ' + transcript;
 
-                    // Send to Python via fetch (simplified – using a dummy endpoint)
-                    // Since Streamlit can't handle POST easily, we'll use a text input fallback.
-                    // Instead, we'll just simulate a response.
-                    const reply = "I heard you say: " + transcript + ". This is a simulated response.";
+                    // Since we can't easily send to Python, we'll just echo a static response.
+                    // In a real app you'd need a more complex setup.
+                    const reply = "I heard you say: " + transcript + ". How can I help?";
                     document.getElementById('response').innerHTML = '{t("Assistant:")} ' + reply;
                     const utterance = new SpeechSynthesisUtterance(reply);
                     utterance.lang = '{st.session_state.language}';
