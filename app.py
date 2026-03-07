@@ -38,7 +38,7 @@ supabase = init_supabase()
 # -------------------- WEATHER API --------------------
 WEATHER_API_KEY = st.secrets.get("weather_api_key", None)
 
-# -------------------- PLACEHOLDER MODEL --------------------
+# -------------------- MOCK MODEL (expanded) --------------------
 USE_MOCK = True
 MOCK_CLASSES = [
     "Apple Scab", "Apple Black Rot", "Cedar Apple Rust", "Healthy Apple",
@@ -47,7 +47,11 @@ MOCK_CLASSES = [
     "Potato Early Blight", "Potato Late Blight", "Healthy Potato",
     "Tomato Bacterial Spot", "Tomato Early Blight", "Tomato Late Blight", "Tomato Leaf Mold",
     "Tomato Septoria Leaf Spot", "Tomato Spider Mites", "Tomato Target Spot",
-    "Tomato Yellow Leaf Curl Virus", "Tomato Mosaic Virus", "Healthy Tomato"
+    "Tomato Yellow Leaf Curl Virus", "Tomato Mosaic Virus", "Healthy Tomato",
+    "Rice Blast", "Rice Brown Spot", "Rice Sheath Blight", "Healthy Rice",
+    "Wheat Leaf Rust", "Wheat Stripe Rust", "Wheat Powdery Mildew", "Healthy Wheat",
+    "Sugarcane Red Rot", "Sugarcane Smut", "Healthy Sugarcane",
+    "Cotton Leaf Curl", "Cotton Boll Rot", "Healthy Cotton"
 ]
 
 def predict_disease(image):
@@ -59,7 +63,7 @@ def predict_disease(image):
         # Real prediction code later
         pass
 
-# -------------------- DISEASE DATABASE (ENHANCED) --------------------
+# -------------------- DISEASE DATABASE (expanded) --------------------
 DISEASE_DB = {
     "Apple Scab": {
         "crop": "Apple",
@@ -111,36 +115,36 @@ DISEASE_DB = {
         "season": "Summer/Fall",
         "severity": "Medium"
     },
-    "Tomato Leaf Mold": {
+    "Tomato Septoria Leaf Spot": {
         "crop": "Tomato",
-        "cause": "Fungus Passalora fulva",
-        "symptoms": "Pale green or yellowish spots on upper leaf surfaces, olive‑green to grayish mold on undersides. Leaves may wither and die.",
-        "prevention": "Improve air circulation. Reduce humidity. Water at base of plants. Remove lower leaves. Use resistant varieties.",
-        "organic": "Neem oil (2ml per liter). Potassium bicarbonate (1 tsp per liter). Compost tea.",
-        "treatment": "Apply fungicides at first sign. Maintain low humidity.",
+        "cause": "Fungus Septoria lycopersici",
+        "symptoms": "Small, water‑soaked spots that later develop gray centers with dark brown margins. Leaves yellow and drop.",
+        "prevention": "Avoid overhead watering. Remove infected leaves. Crop rotation. Use mulch to prevent soil splash.",
+        "organic": "Copper fungicides. Baking soda spray (1 tsp per liter water with a few drops of vegetable oil).",
+        "treatment": "Apply fungicides containing chlorothalonil or copper hydroxide at first sign.",
         "medicines": [
+            {"name": "Chlorothalonil", "company": "Syngenta", "price": "₹2,799/500g", "rating": 4.3,
+             "usage": "Apply 2g per liter. Repeat every 7‑10 days."},
             {"name": "Copper Hydroxide", "company": "DuPont", "price": "₹3,199/500g", "rating": 4.2,
-             "usage": "Apply 2g per liter. Use 300 liters per acre. Repeat every 7 days."},
-            {"name": "Chlorothalonil", "company": "Syngenta", "price": "₹2,899/500g", "rating": 4.1,
-             "usage": "Apply 2g per liter. Use 300‑400 liters per acre. Do not use within 7 days of harvest."}
+             "usage": "Apply 2g per liter. Use 300 liters per acre."}
         ],
         "season": "Spring/Summer",
         "severity": "Medium"
     },
-    "Wheat Stem Rust": {
-        "crop": "Wheat",
-        "cause": "Fungus Puccinia graminis",
-        "symptoms": "Reddish‑brown pustules on stems and leaves, can cause stem breakage and grain shriveling. Pustules are elongated.",
-        "prevention": "Use resistant varieties. Early planting. Destroy volunteer wheat. Avoid excessive nitrogen.",
-        "organic": "Sulfur spray (5g per liter). Neem oil. Bacillus subtilis.",
-        "treatment": "Apply fungicides at first sign. Use protectant fungicides before infection.",
+    "Tomato Blast": {
+        "crop": "Tomato",
+        "cause": "Fungus Alternaria solani (early blight) or Phytophthora infestans (late blight)",
+        "symptoms": "Dark lesions on leaves, stems, and fruit. Rapid wilting and death of foliage.",
+        "prevention": "Use resistant varieties. Avoid overhead irrigation. Remove infected plant debris.",
+        "organic": "Copper fungicides. Neem oil.",
+        "treatment": "Apply fungicides containing chlorothalonil, mancozeb, or copper compounds.",
         "medicines": [
-            {"name": "Tebuconazole", "company": "Bayer", "price": "₹3,399/500ml", "rating": 4.3,
-             "usage": "Apply 1ml per liter. Use 200 liters per acre. Apply at first sign of disease."},
-            {"name": "Propiconazole", "company": "Syngenta", "price": "₹4,199/500ml", "rating": 4.4,
-             "usage": "Apply 0.5ml per liter. Use 200 liters per acre. Maximum 2 applications."}
+            {"name": "Mancozeb", "company": "Dow", "price": "₹2,999/500g", "rating": 4.3,
+             "usage": "Apply 2g per liter. Repeat every 7‑10 days."},
+            {"name": "Chlorothalonil", "company": "Syngenta", "price": "₹2,799/500g", "rating": 4.3,
+             "usage": "Apply 2g per liter."}
         ],
-        "season": "Spring",
+        "season": "Spring/Summer",
         "severity": "High"
     },
     "Rice Blast": {
@@ -174,6 +178,22 @@ DISEASE_DB = {
         ],
         "season": "Spring",
         "severity": "High"
+    },
+    "Wheat Leaf Rust": {
+        "crop": "Wheat",
+        "cause": "Fungus Puccinia triticina",
+        "symptoms": "Small, reddish‑brown pustules scattered on leaves.",
+        "prevention": "Use resistant varieties. Early planting. Avoid excessive nitrogen.",
+        "organic": "Sulfur spray, neem oil.",
+        "treatment": "Apply fungicides at first sign.",
+        "medicines": [
+            {"name": "Tebuconazole", "company": "Bayer", "price": "₹3,399/500ml", "rating": 4.3,
+             "usage": "Apply 1ml per liter."},
+            {"name": "Propiconazole", "company": "Syngenta", "price": "₹4,199/500ml", "rating": 4.4,
+             "usage": "Apply 0.5ml per liter."}
+        ],
+        "season": "Spring",
+        "severity": "Medium"
     }
 }
 
@@ -190,7 +210,7 @@ CROP_CALENDAR = {
 # -------------------- WEATHER FUNCTION --------------------
 def get_weather(city="Delhi"):
     if not WEATHER_API_KEY:
-        return None, "Weather API key not configured."
+        return None, "Weather API key not configured. Please get a free API key from OpenWeatherMap and add it to Streamlit secrets."
     url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={WEATHER_API_KEY}&units=metric"
     try:
         response = requests.get(url)
@@ -242,29 +262,61 @@ def book_appointment(user_email, officer_id, date, time_slot):
     supabase.table("appointments").insert(data).execute()
     return True
 
-# -------------------- CHATBOT ENGINE --------------------
+# -------------------- IMPROVED CHATBOT ENGINE --------------------
 def chatbot_response(query):
-    query = query.lower()
-    if any(word in query for word in ["hello", "hi", "hey", "namaste"]):
-        return "Hello! How can I help you with your crops today?"
+    query = query.lower().strip()
+    
+    # Greetings
+    if any(word in query for word in ["hello", "hi", "hey", "namaste", "hola"]):
+        return "Hello! How can I assist you with your crops today?"
+    
+    # Help / menu
+    if any(word in query for word in ["help", "what can you do", "options"]):
+        return "I can answer questions about crop diseases, prevention, treatment, officers, weather, and crop calendar. Just ask me!"
+    
+    # Disease information
     for disease in DISEASE_DB:
-        if disease.lower() in query:
+        if disease.lower() in query or any(word in query for word in disease.lower().split()):
             info = DISEASE_DB[disease]
-            return (f"{disease}: {info['symptoms']}\n\n"
-                    f"Cause: {info['cause']}\n"
-                    f"Prevention: {info['prevention']}\n"
-                    f"Treatment: {info['treatment']}\n"
-                    f"Organic: {info['organic']}")
-    if any(word in query for word in ["officer", "appointment", "contact"]):
-        return "You can find and book officers under the 'Officers & Appointments' page."
-    if any(word in query for word in ["weather", "temperature", "rain"]):
-        return "Go to the Weather page to get current conditions for your city."
-    if any(word in query for word in ["thank", "thanks", "dhanyavaad"]):
-        return "You're welcome!"
-    return "I'm sorry, I didn't understand that. Try asking about a specific disease, officers, or weather."
+            return (f"**{disease}**\n\n"
+                    f"**Cause:** {info['cause']}\n"
+                    f"**Symptoms:** {info['symptoms']}\n"
+                    f"**Prevention:** {info['prevention']}\n"
+                    f"**Treatment:** {info['treatment']}\n"
+                    f"**Organic options:** {info['organic']}")
+    
+    # Look for partial matches (e.g., "tomato blast" might not be exact key)
+    disease_keys = list(DISEASE_DB.keys())
+    for key in disease_keys:
+        if any(word in key.lower() for word in query.split() if len(word) > 3):
+            info = DISEASE_DB[key]
+            return (f"Did you mean **{key}**?\n\n"
+                    f"**Cause:** {info['cause']}\n"
+                    f"**Symptoms:** {info['symptoms']}\n"
+                    f"**Prevention:** {info['prevention']}\n"
+                    f"**Treatment:** {info['treatment']}\n"
+                    f"**Organic options:** {info['organic']}")
+    
+    # Officers
+    if any(word in query for word in ["officer", "agriculture officer", "appointment", "contact officer"]):
+        return "You can find and book appointments with local agricultural officers under the 'Officers & Appointments' page."
+    
+    # Weather
+    if any(word in query for word in ["weather", "temperature", "rain", "forecast", "climate"]):
+        return "Go to the Weather page to get current conditions for your city. You'll need to add your OpenWeatherMap API key in Streamlit secrets."
+    
+    # Crop calendar
+    if any(word in query for word in ["crop calendar", "planting time", "harvesting time", "when to plant"]):
+        return "The Crop Calendar page shows optimal planting and harvesting seasons for common crops."
+    
+    # Thanks
+    if any(word in query for word in ["thank", "thanks", "dhanyavaad", "thank you"]):
+        return "You're welcome! Feel free to ask anytime."
+    
+    # Default
+    return "I'm sorry, I didn't understand that. Try asking about a specific disease (e.g., 'tomato blast'), officers, weather, or crop calendar."
 
-# -------------------- TRANSLATIONS (8 languages) --------------------
-# Full translations for all 8 languages. You can refine these using Google Translate.
+# -------------------- FULL 8‑LANGUAGE TRANSLATIONS --------------------
 TRANSLATIONS = {
     "en": {
         "🌱 Crop Care AI": "🌱 Crop Care AI",
@@ -350,7 +402,7 @@ TRANSLATIONS = {
         "Contact": "Contact",
         "Disclaimer": "Disclaimer",
         "For assistance only. Always consult agriculture experts.": "For assistance only. Always consult agriculture experts.",
-        "Version 8.0 | © 2025 Crop Care AI": "Version 8.0 | © 2025 Crop Care AI",
+        "Version 9.0 | © 2025 Crop Care AI": "Version 9.0 | © 2025 Crop Care AI",
         "Crop Calendar": "Crop Calendar",
         "Optimal planting and harvesting times for common crops": "Optimal planting and harvesting times for common crops",
         "Planting Season": "Planting Season",
@@ -448,7 +500,7 @@ TRANSLATIONS = {
         "Contact": "संपर्क करें",
         "Disclaimer": "अस्वीकरण",
         "For assistance only. Always consult agriculture experts.": "केवल सहायता के लिए। हमेशा कृषि विशेषज्ञों से सलाह लें।",
-        "Version 8.0 | © 2025 Crop Care AI": "संस्करण 8.0 | © 2025 क्रॉप केयर एआई",
+        "Version 9.0 | © 2025 Crop Care AI": "संस्करण 9.0 | © 2025 क्रॉप केयर एआई",
         "Crop Calendar": "फसल कैलेंडर",
         "Optimal planting and harvesting times for common crops": "सामान्य फसलों के लिए इष्टतम रोपण और कटाई का समय",
         "Planting Season": "रोपण का मौसम",
@@ -546,7 +598,7 @@ TRANSLATIONS = {
         "Contact": "సంప్రదించండి",
         "Disclaimer": "నిరాకరణ",
         "For assistance only. Always consult agriculture experts.": "సహాయం కోసం మాత్రమే. ఎల్లప్పుడూ వ్యవసాయ నిపుణులను సంప్రదించండి.",
-        "Version 8.0 | © 2025 Crop Care AI": "వెర్షన్ 8.0 | © 2025 క్రాప్ కేర్ AI",
+        "Version 9.0 | © 2025 Crop Care AI": "వెర్షన్ 9.0 | © 2025 క్రాప్ కేర్ AI",
         "Crop Calendar": "పంట క్యాలెండర్",
         "Optimal planting and harvesting times for common crops": "సాధారణ పంటలకు సరైన నాటడం మరియు కోత సమయాలు",
         "Planting Season": "నాటడం సీజన్",
@@ -644,7 +696,7 @@ TRANSLATIONS = {
         "Contact": "ಸಂಪರ್ಕ",
         "Disclaimer": "ಹಕ್ಕು ನಿರಾಕರಣೆ",
         "For assistance only. Always consult agriculture experts.": "ಸಹಾಯಕ್ಕಾಗಿ ಮಾತ್ರ. ಯಾವಾಗಲೂ ಕೃಷಿ ತಜ್ಞರನ್ನು ಸಂಪರ್ಕಿಸಿ.",
-        "Version 8.0 | © 2025 Crop Care AI": "ಆವೃತ್ತಿ 8.0 | © 2025 ಕ್ರಾಪ್ ಕೇರ್ AI",
+        "Version 9.0 | © 2025 Crop Care AI": "ಆವೃತ್ತಿ 9.0 | © 2025 ಕ್ರಾಪ್ ಕೇರ್ AI",
         "Crop Calendar": "ಬೆಳೆ ಕ್ಯಾಲೆಂಡರ್",
         "Optimal planting and harvesting times for common crops": "ಸಾಮಾನ್ಯ ಬೆಳೆಗಳಿಗೆ ಸೂಕ್ತವಾದ ನೆಡುವಿಕೆ ಮತ್ತು ಕೊಯ್ಲು ಸಮಯಗಳು",
         "Planting Season": "ನೆಡುವಿಕೆ ಕಾಲ",
@@ -658,9 +710,398 @@ TRANSLATIONS = {
         "Command": "ಆಜ್ಞೆ",
         "Send Command": "ಆಜ್ಞೆ ಕಳುಹಿಸಿ",
     },
-    # Add Tamil (ta), Bengali (bn), Marathi (mr), Gujarati (gu) similarly...
-    # For brevity, the full code will include all eight languages, but here we'll truncate for space.
-    # In your actual code, include full sections for ta, bn, mr, gu with the same keys.
+    "ta": {
+        "🌱 Crop Care AI": "🌱 கிராப் கேர் AI",
+        "Select Language": "மொழியைத் தேர்ந்தெடுக்கவும்",
+        "Home": "முகப்பு",
+        "Disease Detection": "நோய் கண்டறிதல்",
+        "Disease Database": "நோய் தரவுத்தளம்",
+        "Officers & Appointments": "அதிகாரிகள் & சந்திப்புகள்",
+        "Live Data": "நேரடி தரவு",
+        "Assistant": "உதவியாளர்",
+        "Crop Calendar": "பயிர் நாட்காட்டி",
+        "Weather": "வானிலை",
+        "About": "பற்றி",
+        "Menu": "மெனு",
+        "🔐 Login / Sign Up": "🔐 உள்நுழைவு / பதிவு",
+        "Login": "உள்நுழைவு",
+        "Sign Up": "பதிவு",
+        "Google Login": "கூகுள் உள்நுழைவு",
+        "Login with Google (Demo)": "கூகுள் மூலம் உள்நுழைக (டெமோ)",
+        "Simulated Google Login (for demo)": "உருவகப்படுத்தப்பட்ட கூகுள் உள்நுழைவு (டெமோவிற்கு)",
+        "Email": "மின்னஞ்சல்",
+        "Password": "கடவுச்சொல்",
+        "Full Name": "முழு பெயர்",
+        "Welcome": "வரவேற்கிறோம்",
+        "Logout": "வெளியேறு",
+        "Please login to use disease detection": "தயவுசெய்து நோய் கண்டறிதலைப் பயன்படுத்த உள்நுழைக",
+        "Upload Image": "படத்தை பதிவேற்றவும்",
+        "Take a Photo": "ஒரு புகைப்படம் எடு",
+        "Analyze Uploaded Image": "பதிவேற்றப்பட்ட படத்தை பகுப்பாய்வு செய்யவும்",
+        "Analyze Camera Photo": "கேமரா புகைப்படத்தை பகுப்பாய்வு செய்யவும்",
+        "Detection complete! Confidence:": "கண்டறிதல் முடிந்தது! நம்பிக்கை:",
+        "Disease:": "நோய்:",
+        "Crop:": "பயிர்:",
+        "Severity:": "தீவிரத்தன்மை:",
+        "Cause": "காரணம்",
+        "Symptoms": "அறிகுறிகள்",
+        "Prevention": "தடுப்பு",
+        "Organic Treatment": "இயற்கை சிகிச்சை",
+        "Treatment": "சிகிச்சை",
+        "Recommended Medicines": "பரிந்துரைக்கப்பட்ட மருந்துகள்",
+        "How to use": "எப்படி பயன்படுத்துவது",
+        "Buy": "வாங்க",
+        "⚠️ Consult your local agriculture officer before treatment": "⚠️ சிகிச்சைக்கு முன் உங்கள் உள்ளூர் வேளாண்மை அதிகாரியை அணுகவும்",
+        "All": "அனைத்தும்",
+        "Filter by crop": "பயிர் வாரியாக வடிகட்டவும்",
+        "Filter by district": "மாவட்டம் வாரியாக வடிகட்டவும்",
+        "Available Officers": "கிடைக்கக்கூடிய அதிகாரிகள்",
+        "Phone": "தொலைபேசி",
+        "Available": "கிடைக்கும்",
+        "Book Appointment": "சந்திப்பை பதிவு செய்யவும்",
+        "Select Date": "தேதியைத் தேர்ந்தெடுக்கவும்",
+        "Select Time": "நேரத்தைத் தேர்ந்தெடுக்கவும்",
+        "Confirm Booking": "பதிவை உறுதிப்படுத்தவும்",
+        "Appointment booked successfully! Officer will contact you.": "சந்திப்பு வெற்றிகரமாக பதிவு செய்யப்பட்டது! அதிகாரி உங்களைத் தொடர்புகொள்வார்.",
+        "No officers found in this district.": "இந்த மாவட்டத்தில் அதிகாரிகள் எவரும் கிடைக்கவில்லை.",
+        "Temperature": "வெப்பநிலை",
+        "Humidity": "ஈரப்பதம்",
+        "Soil Moisture": "மண்ணின் ஈரப்பதம்",
+        "Rainfall (24h)": "மழைப்பொழிவு (24 மணி)",
+        "Today": "இன்று",
+        "Current Disease Risk:": "தற்போதைய நோய் ஆபத்து:",
+        "Low": "குறைந்த",
+        "Medium": "நடுத்தர",
+        "High": "உயர்",
+        "Disease Incidence Trend": "நோய் நிகழ்வு போக்கு",
+        "Daily Disease Cases (Last 30 Days)": "தினசரி நோய் வழக்குகள் (கடந்த 30 நாட்கள்)",
+        "Weather Forecast": "வானிலை முன்னறிவிப்பு",
+        "7-Day Temperature Forecast": "7-நாள் வெப்பநிலை முன்னறிவிப்பு",
+        "Date": "தேதி",
+        "Temperature (°C)": "வெப்பநிலை (டிகிரி செல்சியஸ்)",
+        "Choose your preferred way to interact": "உங்கள் விருப்பமான தொடர்பு முறையைத் தேர்வுசெய்க",
+        "Chat": "அரட்டை",
+        "Voice": "குரல்",
+        "Type your message here...": "உங்கள் செய்தியை இங்கே தட்டச்சு செய்க...",
+        "Send": "அனுப்பு",
+        "You said:": "நீங்கள் சொன்னது:",
+        "Assistant:": "உதவியாளர்:",
+        "Listening...": "கேட்டுக் கொண்டிருக்கிறது...",
+        "Start Listening": "கேட்கத் தொடங்கு",
+        "Stop Listening": "கேட்பதை நிறுத்து",
+        "Features": "அம்சங்கள்",
+        "Technology": "தொழில்நுட்பம்",
+        "Contact": "தொடர்பு கொள்ள",
+        "Disclaimer": "பொறுப்புத் துறப்பு",
+        "For assistance only. Always consult agriculture experts.": "உதவிக்கு மட்டுமே. எப்போதும் வேளாண் நிபுணர்களை அணுகவும்.",
+        "Version 9.0 | © 2025 Crop Care AI": "பதிப்பு 9.0 | © 2025 கிராப் கேர் AI",
+        "Crop Calendar": "பயிர் நாட்காட்டி",
+        "Optimal planting and harvesting times for common crops": "பொதுவான பயிர்களுக்கு உகந்த நடவு மற்றும் அறுவடை நேரங்கள்",
+        "Planting Season": "நடவு காலம்",
+        "Harvesting Season": "அறுவடை காலம்",
+        "Current weather conditions for your region": "உங்கள் பகுதிக்கான தற்போதைய வானிலை நிலைமைகள்",
+        "Enter city": "நகரத்தை உள்ளிடவும்",
+        "Get Weather": "வானிலை பெறுக",
+        "Wind Speed": "காற்றின் வேகம்",
+        "Pressure": "அழுத்தம்",
+        "You": "நீங்கள்",
+        "Command": "கட்டளை",
+        "Send Command": "கட்டளையை அனுப்பு",
+    },
+    "bn": {
+        "🌱 Crop Care AI": "🌱 ক্রপ কেয়ার এআই",
+        "Select Language": "ভাষা নির্বাচন করুন",
+        "Home": "হোম",
+        "Disease Detection": "রোগ সনাক্তকরণ",
+        "Disease Database": "রোগ ডেটাবেস",
+        "Officers & Appointments": "কর্মকর্তা ও অ্যাপয়েন্টমেন্ট",
+        "Live Data": "লাইভ ডেটা",
+        "Assistant": "সহায়ক",
+        "Crop Calendar": "ফসল ক্যালেন্ডার",
+        "Weather": "আবহাওয়া",
+        "About": "সম্পর্কে",
+        "Menu": "মেনু",
+        "🔐 Login / Sign Up": "🔐 লগইন / সাইন আপ",
+        "Login": "লগইন",
+        "Sign Up": "সাইন আপ",
+        "Google Login": "গুগল লগইন",
+        "Login with Google (Demo)": "গুগল দিয়ে লগইন (ডেমো)",
+        "Simulated Google Login (for demo)": "সিমুলেটেড গুগল লগইন (ডেমোর জন্য)",
+        "Email": "ইমেইল",
+        "Password": "পাসওয়ার্ড",
+        "Full Name": "পুরো নাম",
+        "Welcome": "স্বাগতম",
+        "Logout": "লগআউট",
+        "Please login to use disease detection": "রোগ সনাক্তকরণ ব্যবহার করতে অনুগ্রহ করে লগইন করুন",
+        "Upload Image": "ছবি আপলোড করুন",
+        "Take a Photo": "ছবি তুলুন",
+        "Analyze Uploaded Image": "আপলোড করা ছবি বিশ্লেষণ করুন",
+        "Analyze Camera Photo": "ক্যামেরার ছবি বিশ্লেষণ করুন",
+        "Detection complete! Confidence:": "সনাক্তকরণ সম্পূর্ণ! আত্মবিশ্বাস:",
+        "Disease:": "রোগ:",
+        "Crop:": "ফসল:",
+        "Severity:": "তীব্রতা:",
+        "Cause": "কারণ",
+        "Symptoms": "লক্ষণ",
+        "Prevention": "প্রতিরোধ",
+        "Organic Treatment": "জৈব চিকিৎসা",
+        "Treatment": "চিকিৎসা",
+        "Recommended Medicines": "প্রস্তাবিত ওষুধ",
+        "How to use": "কিভাবে ব্যবহার করবেন",
+        "Buy": "কিনুন",
+        "⚠️ Consult your local agriculture officer before treatment": "⚠️ চিকিৎসার আগে আপনার স্থানীয় কৃষি কর্মকর্তার সাথে পরামর্শ করুন",
+        "All": "সব",
+        "Filter by crop": "ফসল অনুযায়ী ফিল্টার",
+        "Filter by district": "জেলা অনুযায়ী ফিল্টার",
+        "Available Officers": "উপলব্ধ কর্মকর্তা",
+        "Phone": "ফোন",
+        "Available": "উপলব্ধ",
+        "Book Appointment": "অ্যাপয়েন্টমেন্ট বুক করুন",
+        "Select Date": "তারিখ নির্বাচন করুন",
+        "Select Time": "সময় নির্বাচন করুন",
+        "Confirm Booking": "বুকিং নিশ্চিত করুন",
+        "Appointment booked successfully! Officer will contact you.": "অ্যাপয়েন্টমেন্ট সফলভাবে বুক হয়েছে! কর্মকর্তা আপনার সাথে যোগাযোগ করবেন।",
+        "No officers found in this district.": "এই জেলায় কোনো কর্মকর্তা পাওয়া যায়নি।",
+        "Temperature": "তাপমাত্রা",
+        "Humidity": "আর্দ্রতা",
+        "Soil Moisture": "মাটির আর্দ্রতা",
+        "Rainfall (24h)": "বৃষ্টিপাত (২৪ ঘণ্টা)",
+        "Today": "আজ",
+        "Current Disease Risk:": "বর্তমান রোগের ঝুঁকি:",
+        "Low": "কম",
+        "Medium": "মাঝারি",
+        "High": "উচ্চ",
+        "Disease Incidence Trend": "রোগের ঘটনা প্রবণতা",
+        "Daily Disease Cases (Last 30 Days)": "দৈনিক রোগের ঘটনা (গত ৩০ দিন)",
+        "Weather Forecast": "আবহাওয়ার পূর্বাভাস",
+        "7-Day Temperature Forecast": "৭ দিনের তাপমাত্রার পূর্বাভাস",
+        "Date": "তারিখ",
+        "Temperature (°C)": "তাপমাত্রা (°সে)",
+        "Choose your preferred way to interact": "আপনার পছন্দের উপায় বেছে নিন",
+        "Chat": "চ্যাট",
+        "Voice": "ভয়েস",
+        "Type your message here...": "আপনার বার্তা এখানে টাইপ করুন...",
+        "Send": "পাঠান",
+        "You said:": "আপনি বলেছেন:",
+        "Assistant:": "সহায়ক:",
+        "Listening...": "শুনছি...",
+        "Start Listening": "শোনা শুরু করুন",
+        "Stop Listening": "শোনা বন্ধ করুন",
+        "Features": "বৈশিষ্ট্য",
+        "Technology": "প্রযুক্তি",
+        "Contact": "যোগাযোগ",
+        "Disclaimer": "দাবিত্যাগ",
+        "For assistance only. Always consult agriculture experts.": "শুধুমাত্র সহায়তার জন্য। সর্বদা কৃষি বিশেষজ্ঞদের পরামর্শ নিন।",
+        "Version 9.0 | © 2025 Crop Care AI": "সংস্করণ ৯.০ | © ২০২৫ ক্রপ কেয়ার এআই",
+        "Crop Calendar": "ফসল ক্যালেন্ডার",
+        "Optimal planting and harvesting times for common crops": "সাধারণ ফসলের জন্য আদর্শ রোপণ ও কাটার সময়",
+        "Planting Season": "রোপণের মৌসুম",
+        "Harvesting Season": "কাটার মৌসুম",
+        "Current weather conditions for your region": "আপনার অঞ্চলের বর্তমান আবহাওয়া পরিস্থিতি",
+        "Enter city": "শহর লিখুন",
+        "Get Weather": "আবহাওয়া দেখুন",
+        "Wind Speed": "বাতাসের গতি",
+        "Pressure": "চাপ",
+        "You": "আপনি",
+        "Command": "কমান্ড",
+        "Send Command": "কমান্ড পাঠান",
+    },
+    "mr": {
+        "🌱 Crop Care AI": "🌱 क्रॉप केअर एआय",
+        "Select Language": "भाषा निवडा",
+        "Home": "मुखपृष्ठ",
+        "Disease Detection": "रोग शोध",
+        "Disease Database": "रोग डेटाबेस",
+        "Officers & Appointments": "अधिकारी आणि भेटी",
+        "Live Data": "थेट डेटा",
+        "Assistant": "सहाय्यक",
+        "Crop Calendar": "पीक कॅलेंडर",
+        "Weather": "हवामान",
+        "About": "बद्दल",
+        "Menu": "मेनू",
+        "🔐 Login / Sign Up": "🔐 लॉगिन / साइन अप",
+        "Login": "लॉगिन",
+        "Sign Up": "साइन अप",
+        "Google Login": "गूगल लॉगिन",
+        "Login with Google (Demo)": "गूगलसह लॉगिन (डेमो)",
+        "Simulated Google Login (for demo)": "सिम्युलेटेड गूगल लॉगिन (डेमोसाठी)",
+        "Email": "ईमेल",
+        "Password": "पासवर्ड",
+        "Full Name": "पूर्ण नाव",
+        "Welcome": "स्वागत आहे",
+        "Logout": "लॉगआउट",
+        "Please login to use disease detection": "कृपया रोग शोध वापरण्यासाठी लॉगिन करा",
+        "Upload Image": "प्रतिमा अपलोड करा",
+        "Take a Photo": "फोटो काढा",
+        "Analyze Uploaded Image": "अपलोड केलेल्या प्रतिमेचे विश्लेषण करा",
+        "Analyze Camera Photo": "कॅमेरा फोटोचे विश्लेषण करा",
+        "Detection complete! Confidence:": "शोध पूर्ण! आत्मविश्वास:",
+        "Disease:": "रोग:",
+        "Crop:": "पीक:",
+        "Severity:": "तीव्रता:",
+        "Cause": "कारण",
+        "Symptoms": "लक्षणे",
+        "Prevention": "प्रतिबंध",
+        "Organic Treatment": "सेंद्रिय उपचार",
+        "Treatment": "उपचार",
+        "Recommended Medicines": "शिफारस केलेली औषधे",
+        "How to use": "कसे वापरावे",
+        "Buy": "खरेदी करा",
+        "⚠️ Consult your local agriculture officer before treatment": "⚠️ उपचारापूर्वी आपल्या स्थानिक कृषी अधिकाऱ्याचा सल्ला घ्या",
+        "All": "सर्व",
+        "Filter by crop": "पीकानुसार फिल्टर करा",
+        "Filter by district": "जिल्ह्यानुसार फिल्टर करा",
+        "Available Officers": "उपलब्ध अधिकारी",
+        "Phone": "फोन",
+        "Available": "उपलब्ध",
+        "Book Appointment": "भेट बुक करा",
+        "Select Date": "तारीख निवडा",
+        "Select Time": "वेळ निवडा",
+        "Confirm Booking": "बुकिंगची पुष्टी करा",
+        "Appointment booked successfully! Officer will contact you.": "भेट यशस्वीरित्या बुक झाली! अधिकारी आपल्याशी संपर्क साधेल.",
+        "No officers found in this district.": "या जिल्ह्यात कोणतेही अधिकारी आढळले नाहीत.",
+        "Temperature": "तापमान",
+        "Humidity": "आर्द्रता",
+        "Soil Moisture": "मातीतील ओलावा",
+        "Rainfall (24h)": "पाऊस (२४ तास)",
+        "Today": "आज",
+        "Current Disease Risk:": "सध्याचा रोग धोका:",
+        "Low": "कमी",
+        "Medium": "मध्यम",
+        "High": "उच्च",
+        "Disease Incidence Trend": "रोग घटना प्रवृत्ती",
+        "Daily Disease Cases (Last 30 Days)": "दैनिक रोग प्रकरणे (गेल्या ३० दिवस)",
+        "Weather Forecast": "हवामान अंदाज",
+        "7-Day Temperature Forecast": "७-दिवसीय तापमान अंदाज",
+        "Date": "तारीख",
+        "Temperature (°C)": "तापमान (°से)",
+        "Choose your preferred way to interact": "आपला आवडता मार्ग निवडा",
+        "Chat": "चॅट",
+        "Voice": "व्हॉइस",
+        "Type your message here...": "आपला संदेश येथे टाइप करा...",
+        "Send": "पाठवा",
+        "You said:": "आपण म्हणालात:",
+        "Assistant:": "सहाय्यक:",
+        "Listening...": "ऐकत आहे...",
+        "Start Listening": "ऐकणे सुरू करा",
+        "Stop Listening": "ऐकणे थांबवा",
+        "Features": "वैशिष्ट्ये",
+        "Technology": "तंत्रज्ञान",
+        "Contact": "संपर्क",
+        "Disclaimer": "अस्वीकरण",
+        "For assistance only. Always consult agriculture experts.": "फक्त मदतीसाठी. नेहमी कृषी तज्ज्ञांचा सल्ला घ्या.",
+        "Version 9.0 | © 2025 Crop Care AI": "आवृत्ती ९.० | © २०२५ क्रॉप केअर एआय",
+        "Crop Calendar": "पीक कॅलेंडर",
+        "Optimal planting and harvesting times for common crops": "सामान्य पिकांसाठी इष्टतम लागवड आणि कापणीची वेळ",
+        "Planting Season": "लागवड हंगाम",
+        "Harvesting Season": "कापणी हंगाम",
+        "Current weather conditions for your region": "आपल्या प्रदेशाची सध्याची हवामान स्थिती",
+        "Enter city": "शहर प्रविष्ट करा",
+        "Get Weather": "हवामान मिळवा",
+        "Wind Speed": "वाऱ्याचा वेग",
+        "Pressure": "दाब",
+        "You": "आपण",
+        "Command": "कमांड",
+        "Send Command": "कमांड पाठवा",
+    },
+    "gu": {
+        "🌱 Crop Care AI": "🌱 ક્રોપ કેર એઆઈ",
+        "Select Language": "ભાષા પસંદ કરો",
+        "Home": "હોમ",
+        "Disease Detection": "રોગ શોધ",
+        "Disease Database": "રોગ ડેટાબેઝ",
+        "Officers & Appointments": "અધિકારીઓ અને એપોઇન્ટમેન્ટ્સ",
+        "Live Data": "લાઈવ ડેટા",
+        "Assistant": "સહાયક",
+        "Crop Calendar": "પાક કેલેન્ડર",
+        "Weather": "હવામાન",
+        "About": "વિશે",
+        "Menu": "મેનુ",
+        "🔐 Login / Sign Up": "🔐 લૉગિન / સાઇન અપ",
+        "Login": "લૉગિન",
+        "Sign Up": "સાઇન અપ",
+        "Google Login": "ગૂગલ લૉગિન",
+        "Login with Google (Demo)": "ગૂગલથી લૉગિન (ડેમો)",
+        "Simulated Google Login (for demo)": "સિમ્યુલેટેડ ગૂગલ લૉગિન (ડેમો માટે)",
+        "Email": "ઇમેઇલ",
+        "Password": "પાસવર્ડ",
+        "Full Name": "પૂરું નામ",
+        "Welcome": "સ્વાગત છે",
+        "Logout": "લૉગઆઉટ",
+        "Please login to use disease detection": "કૃપા કરીને રોગ શોધનો ઉપયોગ કરવા માટે લૉગિન કરો",
+        "Upload Image": "છબી અપલોડ કરો",
+        "Take a Photo": "ફોટો લો",
+        "Analyze Uploaded Image": "અપલોડ કરેલ છબીનું વિશ્લેષણ કરો",
+        "Analyze Camera Photo": "કૅમેરા ફોટોનું વિશ્લેષણ કરો",
+        "Detection complete! Confidence:": "શોધ પૂર્ણ! આત્મવિશ્વાસ:",
+        "Disease:": "રોગ:",
+        "Crop:": "પાક:",
+        "Severity:": "તીવ્રતા:",
+        "Cause": "કારણ",
+        "Symptoms": "લક્ષણો",
+        "Prevention": "નિવારણ",
+        "Organic Treatment": "ઓર્ગેનિક ટ્રીટમેન્ટ",
+        "Treatment": "સારવાર",
+        "Recommended Medicines": "ભલામણ કરેલ દવાઓ",
+        "How to use": "કેવી રીતે ઉપયોગ કરવો",
+        "Buy": "ખરીદો",
+        "⚠️ Consult your local agriculture officer before treatment": "⚠️ સારવાર પહેલાં તમારા સ્થાનિક કૃષિ અધિકારીની સલાહ લો",
+        "All": "બધા",
+        "Filter by crop": "પાક દ્વારા ફિલ્ટર કરો",
+        "Filter by district": "જિલ્લા દ્વારા ફિલ્ટર કરો",
+        "Available Officers": "ઉપલબ્ધ અધિકારીઓ",
+        "Phone": "ફોન",
+        "Available": "ઉપલબ્ધ",
+        "Book Appointment": "એપોઇન્ટમેન્ટ બુક કરો",
+        "Select Date": "તારીખ પસંદ કરો",
+        "Select Time": "સમય પસંદ કરો",
+        "Confirm Booking": "બુકિંગની પુષ્ટિ કરો",
+        "Appointment booked successfully! Officer will contact you.": "એપોઇન્ટમેન્ટ સફળતાપૂર્વક બુક થઈ! અધિકારી તમારો સંપર્ક કરશે.",
+        "No officers found in this district.": "આ જિલ્લામાં કોઈ અધિકારી મળ્યા નથી.",
+        "Temperature": "તાપમાન",
+        "Humidity": "ભેજ",
+        "Soil Moisture": "માટીનો ભેજ",
+        "Rainfall (24h)": "વરસાદ (૨૪ કલાક)",
+        "Today": "આજે",
+        "Current Disease Risk:": "વર્તમાન રોગ જોખમ:",
+        "Low": "નીચું",
+        "Medium": "મધ્યમ",
+        "High": "ઊંચું",
+        "Disease Incidence Trend": "રોગની ઘટનાનું વલણ",
+        "Daily Disease Cases (Last 30 Days)": "દૈનિક રોગના કેસ (છેલ્લા ૩૦ દિવસ)",
+        "Weather Forecast": "હવામાન આગાહી",
+        "7-Day Temperature Forecast": "૭-દિવસની તાપમાન આગાહી",
+        "Date": "તારીખ",
+        "Temperature (°C)": "તાપમાન (°સે)",
+        "Choose your preferred way to interact": "તમારી પસંદગીની રીત પસંદ કરો",
+        "Chat": "ચેટ",
+        "Voice": "અવાજ",
+        "Type your message here...": "તમારો સંદેશ અહીં લખો...",
+        "Send": "મોકલો",
+        "You said:": "તમે કહ્યું:",
+        "Assistant:": "સહાયક:",
+        "Listening...": "સાંભળી રહ્યું છે...",
+        "Start Listening": "સાંભળવાનું શરૂ કરો",
+        "Stop Listening": "સાંભળવાનું બંધ કરો",
+        "Features": "વિશેષતાઓ",
+        "Technology": "ટેકનોલોજી",
+        "Contact": "સંપર્ક",
+        "Disclaimer": "અસ્વીકરણ",
+        "For assistance only. Always consult agriculture experts.": "માત્ર સહાય માટે. હંમેશા કૃષિ નિષ્ણાતોની સલાહ લો.",
+        "Version 9.0 | © 2025 Crop Care AI": "સંસ્કરણ ૯.૦ | © ૨૦૨૫ ક્રોપ કેર એઆઈ",
+        "Crop Calendar": "પાક કેલેન્ડર",
+        "Optimal planting and harvesting times for common crops": "સામાન્ય પાકો માટે શ્રેષ્ઠ વાવેતર અને લણણીનો સમય",
+        "Planting Season": "વાવેતરની મોસમ",
+        "Harvesting Season": "લણણીની મોસમ",
+        "Current weather conditions for your region": "તમારા પ્રદેશ માટે વર્તમાન હવામાન પરિસ્થિતિઓ",
+        "Enter city": "શહેર દાખલ કરો",
+        "Get Weather": "હવામાન મેળવો",
+        "Wind Speed": "પવનની ગતિ",
+        "Pressure": "દબાણ",
+        "You": "તમે",
+        "Command": "આદેશ",
+        "Send Command": "આદેશ મોકલો",
+    },
 }
 
 def t(key):
@@ -681,11 +1122,12 @@ if "page" not in st.session_state:
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
-# -------------------- CUSTOM CSS --------------------
+# -------------------- IMPROVED CSS --------------------
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
     html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
+    
     .main-header {
         background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
         padding: 2rem;
@@ -695,6 +1137,7 @@ st.markdown("""
         margin-bottom: 2rem;
         box-shadow: 0 10px 30px rgba(0,0,0,0.15);
     }
+    
     .feature-card {
         background: white;
         padding: 1.5rem;
@@ -703,11 +1146,13 @@ st.markdown("""
         transition: transform 0.3s, box-shadow 0.3s;
         border: 1px solid #eaeaea;
         height: 100%;
+        color: #1a1a1a;
     }
     .feature-card:hover {
         transform: translateY(-5px);
         box-shadow: 0 12px 20px rgba(0,0,0,0.1);
     }
+    
     .stButton>button {
         background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
         color: white;
@@ -721,6 +1166,7 @@ st.markdown("""
         transform: scale(1.02);
         box-shadow: 0 5px 15px rgba(26, 67, 113, 0.4);
     }
+    
     .chat-message {
         padding: 0.8rem;
         border-radius: 1rem;
@@ -729,18 +1175,29 @@ st.markdown("""
     }
     .user-message {
         background: #e1f5fe;
+        color: #0d3c61;
         margin-left: auto;
     }
     .bot-message {
         background: #f1f3f4;
+        color: #1a1a1a;
         margin-right: auto;
     }
+    
     .medicine-card {
         background: #f8f9fa;
         padding: 1rem;
         border-radius: 0.5rem;
         margin: 0.5rem 0;
         border-left: 4px solid #3498db;
+        color: #1a1a1a;
+    }
+    
+    .css-1d391kg {
+        background-color: #f0f2f6;
+    }
+    .sidebar-text {
+        color: #1a1a1a;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -748,7 +1205,7 @@ st.markdown("""
 # -------------------- SIDEBAR --------------------
 with st.sidebar:
     st.image("https://img.icons8.com/color/96/000000/plant-under-sun--v1.png", width=80)
-    st.markdown(f"<h2>{t('🌱 Crop Care AI')}</h2>", unsafe_allow_html=True)
+    st.markdown(f"<h2 class='sidebar-text'>{t('🌱 Crop Care AI')}</h2>", unsafe_allow_html=True)
 
     lang_options = {
         "🇬🇧 English": "en",
@@ -760,8 +1217,10 @@ with st.sidebar:
         "🇮🇳 मराठी": "mr",
         "🇮🇳 ગુજરાતી": "gu"
     }
-    selected_lang = st.selectbox(t("Select Language"), list(lang_options.keys()), index=0)
-    st.session_state.language = lang_options[selected_lang]
+    # Ensure all selected languages exist in TRANSLATIONS
+    available_langs = {k: v for k, v in lang_options.items() if v in TRANSLATIONS}
+    selected_lang = st.selectbox(t("Select Language"), list(available_langs.keys()), index=0)
+    st.session_state.language = available_langs[selected_lang]
 
     st.markdown("---")
     menu_options = [
@@ -851,6 +1310,7 @@ with st.sidebar:
 # -------------------- MAIN CONTENT --------------------
 page = st.session_state.page
 
+# ---- Home ----
 if page == t("Home"):
     st.markdown("""
         <div class="main-header">
@@ -867,6 +1327,7 @@ if page == t("Home"):
     with col3:
         st.markdown(f'<div class="feature-card"><h3>👨‍🌾 {t("Officer Connect")}</h3><p>{t("Find nearby agriculture officers and book appointments directly.")}</p></div>', unsafe_allow_html=True)
 
+# ---- Disease Detection ----
 elif page == t("Disease Detection"):
     st.markdown(f'<div class="main-header"><h1>📸 {t("Disease Detection")}</h1><p>{t("Upload a photo or take one with your camera for instant analysis")}</p></div>', unsafe_allow_html=True)
     if not st.session_state.logged_in:
@@ -915,6 +1376,7 @@ elif page == t("Disease Detection"):
                         st.write(f"**{t('Disease')}:** {disease}")
                         st.info(t("⚠️ Consult your local agriculture officer before treatment"))
 
+# ---- Disease Database ----
 elif page == t("Disease Database"):
     st.markdown(f'<div class="main-header"><h1>📚 {t("Disease Database")}</h1><p>{t("Comprehensive information about crop diseases")}</p></div>', unsafe_allow_html=True)
     search = st.text_input(t("🔍 Search diseases"))
@@ -943,6 +1405,7 @@ elif page == t("Disease Database"):
                 </div>
                 """, unsafe_allow_html=True)
 
+# ---- Officers & Appointments ----
 elif page == t("Officers & Appointments"):
     st.markdown(f'<div class="main-header"><h1>👨‍🌾 {t("Agricultural Officers & Appointments")}</h1><p>{t("Find nearby officers and schedule consultations")}</p></div>', unsafe_allow_html=True)
     if not st.session_state.logged_in:
@@ -982,6 +1445,7 @@ elif page == t("Officers & Appointments"):
         else:
             st.info(t("No officers found in this district."))
 
+# ---- Live Data ----
 elif page == t("Live Data"):
     st.markdown(f'<div class="main-header"><h1>📊 {t("Live Crop Health Monitoring")}</h1><p>{t("Real-time data and disease risk assessment")}</p></div>', unsafe_allow_html=True)
     temp = random.uniform(20,35)
@@ -1018,6 +1482,7 @@ elif page == t("Live Data"):
     fig2.update_layout(title=t('7-Day Temperature Forecast'), xaxis_title=t('Date'), yaxis_title=t('Temperature (°C)'))
     st.plotly_chart(fig2, use_container_width=True)
 
+# ---- Assistant ----
 elif page == t("Assistant"):
     st.markdown(f'<div class="main-header"><h1>🤖 {t("Assistant")}</h1><p>{t("Choose your preferred way to interact")}</p></div>', unsafe_allow_html=True)
     if not st.session_state.logged_in:
@@ -1025,7 +1490,6 @@ elif page == t("Assistant"):
     else:
         tab1, tab2 = st.tabs([t("Chat"), t("Voice")])
 
-        # ---------- Chat Tab (with form for Enter key) ----------
         with tab1:
             st.subheader(t("Chat"))
             for msg in st.session_state.chat_history:
@@ -1043,7 +1507,6 @@ elif page == t("Assistant"):
                     st.session_state.chat_history.append({"role": "assistant", "content": response})
                     st.rerun()
 
-        # ---------- Voice Tab ----------
         with tab2:
             st.subheader(t("Voice"))
             st.info(t("Click 'Start Listening' and speak a command. I will speak back."))
@@ -1052,7 +1515,7 @@ elif page == t("Assistant"):
             <div style="text-align: center;">
                 <button id="start" style="background-color: #1e3c72; color: white; padding: 12px 30px; border: none; border-radius: 50px; margin: 10px;">🎤 {t('Start Listening')}</button>
                 <button id="stop" style="background-color: #e53e3e; color: white; padding: 12px 30px; border: none; border-radius: 50px; margin: 10px;">⏹️ {t('Stop Listening')}</button>
-                <p id="result" style="font-size: 1.3rem;"></p>
+                <p id="result" style="font-size: 1.3rem; color: #1a1a1a;"></p>
                 <p id="response" style="font-size: 1.1rem; color: #2d3748;"></p>
             </div>
 
@@ -1078,7 +1541,7 @@ elif page == t("Assistant"):
                     const transcript = event.results[0][0].transcript;
                     document.getElementById('result').innerHTML = '{t("You said:")} ' + transcript;
                     // Simulate response
-                    const reply = "I heard you say: " + transcript + ". How can I help?";
+                    const reply = "I heard you say: " + transcript + ". In a real version, I would answer properly.";
                     document.getElementById('response').innerHTML = '{t("Assistant:")} ' + reply;
                     const utterance = new SpeechSynthesisUtterance(reply);
                     utterance.lang = '{st.session_state.language}';
@@ -1108,12 +1571,14 @@ elif page == t("Assistant"):
                 """
                 st.components.v1.html(speak_script, height=0)
 
+# ---- Crop Calendar ----
 elif page == t("Crop Calendar"):
     st.markdown(f'<div class="main-header"><h1>📅 {t("Crop Calendar")}</h1><p>{t("Optimal planting and harvesting times for common crops")}</p></div>', unsafe_allow_html=True)
     df = pd.DataFrame.from_dict(CROP_CALENDAR, orient='index').reset_index()
     df.columns = [t("Crop"), t("Planting Season"), t("Harvesting Season")]
     st.table(df)
 
+# ---- Weather ----
 elif page == t("Weather"):
     st.markdown(f'<div class="main-header"><h1>☀️ {t("Weather Forecast")}</h1><p>{t("Current weather conditions for your region")}</p></div>', unsafe_allow_html=True)
     city = st.text_input(t("Enter city"), value="Delhi")
@@ -1132,6 +1597,7 @@ elif page == t("Weather"):
             st.write(f"**{t('Weather')}:** {data['weather'][0]['description'].capitalize()}")
             st.write(f"**{t('Wind Speed')}:** {data['wind']['speed']} m/s")
 
+# ---- About ----
 elif page == t("About"):
     st.markdown(f'<div class="main-header"><h1>ℹ️ {t("About")}</h1><p>{t("AI-Powered Crop Disease Detection System")}</p></div>', unsafe_allow_html=True)
     col1, col2 = st.columns(2)
@@ -1154,4 +1620,4 @@ elif page == t("About"):
             - {t('Supabase for persistent storage')}
             - {t('OpenWeatherMap API')}
         """)
-    st.info(t("Version 8.0 | © 2025 Crop Care AI | Built with ❤️ for farmers"))
+    st.info(t("Version 9.0 | © 2025 Crop Care AI | Built with ❤️ for farmers"))
